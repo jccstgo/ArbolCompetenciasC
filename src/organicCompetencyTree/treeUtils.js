@@ -2,7 +2,7 @@ export function deepClone(obj) {
   return JSON.parse(JSON.stringify(obj));
 }
 
-function getAllChildren(node) {
+export function getAllChildren(node) {
   const visible = Array.isArray(node?.children) ? node.children : [];
   const hidden = Array.isArray(node?._children) ? node._children : [];
   return [...visible, ...hidden];

@@ -7,7 +7,6 @@ import { applySelectionStyles, computeSelection, createEmptySelection, getSelect
 import { renderFullScene } from './d3/renderFullScene.js';
 import { addChildIncremental } from './actions/addChild.js';
 import { toggleChildrenCollapsedAction } from './actions/toggleChildrenCollapsed.js';
-import { reorganizeBranchesAndFruitsAction } from './actions/reorganizeBranchesAndFruits.js';
 import { confirmDeleteAction } from './actions/confirmDelete.js';
 import {
   countNodes,
@@ -149,11 +148,6 @@ export default function OrganicCompetencyTree() {
   }, [treeData, applySelectionHighlight]);
 
 
-  const reorganizeBranchesAndFruits = useCallback(() => {
-    reorganizeBranchesAndFruitsAction({ svgRef, treeDataRef, linkFnsRef });
-  }, []);
-
-
   const confirmDelete = useCallback(() => {
     confirmDeleteAction({
       deleteModal,
@@ -278,10 +272,6 @@ export default function OrganicCompetencyTree() {
         onAction={(action, nodeId) => {
           setContextMenu(null);
           handleMenuAction(action, nodeId);
-        }}
-        onReorganize={() => {
-          setContextMenu(null);
-          reorganizeBranchesAndFruits();
         }}
       />
 

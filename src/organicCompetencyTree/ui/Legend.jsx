@@ -13,32 +13,32 @@ export default function Legend() {
         bottom: 14,
         left: 14,
         zIndex: 10,
-        padding: '24px 26px',
+        padding: '12px 13px',
         background: 'rgba(13,27,42,0.9)',
-        borderRadius: '18px',
+        borderRadius: '12px',
         border: '1px solid rgba(255,193,7,0.15)',
         backdropFilter: 'blur(8px)',
       }}
     >
       <div
         style={{
-          fontSize: 'clamp(24px, 1.9vw, 32px)',
+          fontSize: 'clamp(12px, 0.95vw, 16px)',
           fontWeight: 900,
           color: 'rgba(255,255,255,0.6)',
           letterSpacing: '1.5px',
-          marginBottom: '16px',
+          marginBottom: '10px',
           textTransform: 'uppercase',
         }}
       >
         Leyenda
       </div>
       {legendItems.map((item) => (
-        <div key={item.type} style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
+        <div key={item.type} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
           <div
             style={{
-              width: 34,
-              height: 34,
-              borderRadius: '10px',
+              width: 20,
+              height: 20,
+              borderRadius: '7px',
               background: item.color,
               flex: '0 0 auto',
               display: 'flex',
@@ -48,9 +48,9 @@ export default function Legend() {
               boxShadow: '0 8px 16px rgba(0,0,0,0.18)',
             }}
           >
-            <span style={{ fontSize: '20px', color: '#fff', textShadow: '0 2px 0 rgba(0,0,0,0.45)' }}>{item.icon}</span>
+            <span style={{ fontSize: '12px', color: '#fff', textShadow: '0 2px 0 rgba(0,0,0,0.45)' }}>{item.icon}</span>
           </div>
-          <span style={{ fontSize: 'clamp(28px, 2.1vw, 36px)', fontWeight: 800, color: '#E8E8E8', lineHeight: 1.2 }}>
+          <span style={{ fontSize: 'clamp(14px, 1.05vw, 18px)', fontWeight: 800, color: '#E8E8E8', lineHeight: 1.2 }}>
             {item.label}
           </span>
         </div>

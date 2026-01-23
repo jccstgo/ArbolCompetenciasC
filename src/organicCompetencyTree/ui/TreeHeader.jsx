@@ -6,7 +6,7 @@ export default function TreeHeader() {
         top: 0,
         left: 0,
         right: 0,
-        padding: '28px 32px',
+        padding: '14px 16px',
         zIndex: 10,
         background: 'linear-gradient(180deg, rgba(13,27,42,0.95) 0%, transparent 100%)',
       }}
@@ -15,13 +15,13 @@ export default function TreeHeader() {
         <h1
           style={{
             margin: 0,
-            fontSize: 'clamp(44px, 4.4vw, 80px)',
+            fontSize: 'clamp(22px, 2.2vw, 40px)',
             fontWeight: 800,
             color: '#FFD54F',
             letterSpacing: '2px',
             textTransform: 'uppercase',
             fontFamily: 'Georgia, serif',
-            textShadow: '0 3px 0 rgba(0,0,0,0.55), 0 10px 24px rgba(0,0,0,0.45)',
+            textShadow: '0 2px 0 rgba(0,0,0,0.55), 0 6px 16px rgba(0,0,0,0.45)',
             WebkitTextStroke: '1px rgba(0,0,0,0.45)',
           }}
         >

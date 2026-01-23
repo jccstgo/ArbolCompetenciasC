@@ -12,32 +12,32 @@ export default function Stats({ treeData, countNodes }) {
         bottom: 14,
         right: 14,
         zIndex: 10,
-        padding: '24px 26px',
+        padding: '12px 13px',
         background: 'rgba(13,27,42,0.9)',
-        borderRadius: '18px',
+        borderRadius: '12px',
         border: '1px solid rgba(255,193,7,0.15)',
         backdropFilter: 'blur(8px)',
       }}
     >
       <div
         style={{
-          fontSize: 'clamp(24px, 1.9vw, 32px)',
+          fontSize: 'clamp(12px, 0.95vw, 16px)',
           fontWeight: 900,
           color: 'rgba(255,255,255,0.6)',
           letterSpacing: '1.5px',
-          marginBottom: '16px',
+          marginBottom: '10px',
           textTransform: 'uppercase',
         }}
       >
         Estadísticas
       </div>
-      <div style={{ display: 'flex', gap: '28px' }}>
+      <div style={{ display: 'flex', gap: '14px' }}>
         {statItems.map((item) => (
           <div key={item.type} style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 'clamp(48px, 3.6vw, 68px)', fontWeight: 900, color: item.color, lineHeight: 1.05 }}>
+            <div style={{ fontSize: 'clamp(24px, 1.8vw, 34px)', fontWeight: 900, color: item.color, lineHeight: 1.05 }}>
               {countNodes(treeData, item.type)}
             </div>
-            <div style={{ fontSize: 'clamp(24px, 1.9vw, 32px)', fontWeight: 900, color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            <div style={{ fontSize: 'clamp(12px, 0.95vw, 16px)', fontWeight: 900, color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: '1px' }}>
               {item.label}
             </div>
           </div>

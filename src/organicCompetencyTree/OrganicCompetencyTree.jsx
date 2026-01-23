@@ -128,6 +128,7 @@ export default function OrganicCompetencyTree() {
   const isFirstRender = useRef(true);
   const linkFnsRef = useRef({ rootPath: null, branchPath: null, rootWidth: null, branchWidth: null });
   const treeDataRef = useRef(null);
+  const selectionRef = useRef({ selectedId: null, descendants: new Set(), ancestors: new Set() });
   
   const [treeData, setTreeData] = useState(initialData);
   const [contextMenu, setContextMenu] = useState(null);
@@ -143,6 +144,117 @@ export default function OrganicCompetencyTree() {
   const [masteryValue, setMasteryValue] = useState(50);
 
   useEffect(() => { treeDataRef.current = treeData; }, [treeData]);
+
+  const getSelectionKindForId = useCallback((id) => {
+    const sel = selectionRef.current;
+    if (!sel?.selectedId) return null;
+    if (id === sel.selectedId) return 'selected';
+    if (sel.descendants?.has?.(id)) return 'desc';
+    if (sel.ancestors?.has?.(id)) return 'anc';
+    return null;
+  }, []);
+
+  const applySelectionHighlight = useCallback((selectedId) => {
+    const svgEl = svgRef.current;
+    const model = treeDataRef.current;
+    if (!svgEl || !model) return;
+
+    const svg = d3.select(svgEl);
+    const nodesGroup = svg.select('.nodes');
+    if (nodesGroup.empty()) return;
+
+    const childrenAll = (n) =>
+      [
+        ...(Array.isArray(n?.children) ? n.children : []),
+        ...(Array.isArray(n?._children) ? n._children : []),
+      ].filter(Boolean);
+
+    const setDefaults = () => {
+      selectionRef.current = { selectedId: null, descendants: new Set(), ancestors: new Set() };
+      nodesGroup.selectAll('.node').each(function (d) {
+        const g = d3.select(this);
+        g.classed('hl-desc', false).classed('hl-anc', false).classed('hl-selected', false).style('filter', null);
+        const ring = g.select('.glow-ring');
+        if (!ring.empty()) {
+          const t = d?.data?.type;
+          const stroke = t === 'fruit' ? '#FFC107' : t === 'root' ? '#8D6E63' : '#81C784';
+          ring.attr('stroke', stroke).attr('stroke-width', 3).attr('opacity', 0);
+        }
+      });
+    };
+
+    if (!selectedId) {
+      setDefaults();
+      return;
+    }
+
+    // If the selected node isn't visible, clear selection to avoid "phantom" highlights.
+    const selectedEl = nodesGroup.select(`.node-${selectedId}`);
+    if (selectedEl.empty() || selectedEl.node()?.style?.display === 'none') {
+      setDefaults();
+      return;
+    }
+
+    const parentById = new Map();
+    const walkParents = (node, parentId) => {
+      if (!node) return;
+      parentById.set(node.id, parentId);
+      childrenAll(node).forEach((k) => walkParents(k, node.id));
+    };
+    walkParents(model, null);
+
+    const selectedModel = findNode(model, selectedId);
+    if (!selectedModel) {
+      setDefaults();
+      return;
+    }
+
+    const descendants = new Set([selectedId]);
+    const stack = [...childrenAll(selectedModel)];
+    while (stack.length) {
+      const next = stack.pop();
+      if (!next) continue;
+      descendants.add(next.id);
+      stack.push(...childrenAll(next));
+    }
+
+    const ancestors = new Set();
+    let cur = selectedId;
+    while (true) {
+      const pid = parentById.get(cur);
+      if (!pid) break;
+      ancestors.add(pid);
+      cur = pid;
+    }
+
+    selectionRef.current = { selectedId, descendants, ancestors };
+
+    nodesGroup.selectAll('.node').each(function (d) {
+      const id = d?.data?.id;
+      const kind = id != null ? getSelectionKindForId(id) : null;
+
+      const g = d3.select(this);
+      g.classed('hl-desc', kind === 'desc').classed('hl-anc', kind === 'anc').classed('hl-selected', kind === 'selected');
+
+      const ring = g.select('.glow-ring');
+      if (!ring.empty()) {
+        const baseStroke = d?.data?.type === 'fruit' ? '#FFC107' : d?.data?.type === 'root' ? '#8D6E63' : '#81C784';
+        const stroke = kind === 'selected' ? '#FFC107' : kind === 'desc' ? '#FFD54F' : kind === 'anc' ? '#B0BEC5' : baseStroke;
+        const width = kind ? (kind === 'selected' ? 5 : 4) : 3;
+        const opacity = kind ? (kind === 'selected' ? 0.95 : kind === 'desc' ? 0.72 : 0.66) : 0;
+
+        ring.interrupt().attr('stroke', stroke).attr('stroke-width', width).attr('opacity', opacity);
+      }
+
+      if (kind === 'selected' || kind === 'desc') {
+        g.style('filter', 'drop-shadow(0 0 10px rgba(255, 193, 7, 0.45))');
+      } else if (kind === 'anc') {
+        g.style('filter', 'drop-shadow(0 0 10px rgba(176, 190, 197, 0.55))');
+      } else {
+        g.style('filter', null);
+      }
+    });
+  }, [getSelectionKindForId]);
 
   useEffect(() => { if (renameModal.isOpen) setRenameValue(renameModal.currentName); }, [renameModal.isOpen, renameModal.currentName]);
   useEffect(() => { if (masteryModal.isOpen) setMasteryValue(masteryModal.currentMastery); }, [masteryModal.isOpen, masteryModal.currentMastery]);
@@ -709,7 +821,7 @@ export default function OrganicCompetencyTree() {
       .on('start', function (event, d) {
         event.sourceEvent.stopPropagation();
         d3.select(this).raise().style('cursor', 'grabbing');
-        d3.select(this).select('.glow-ring').transition().duration(150).attr('opacity', 0.6);
+        d3.select(this).select('.glow-ring').transition().duration(120).attr('opacity', 0.85);
         const transform = zoomRef.current || d3.zoomIdentity;
         d.dragStartX = d.fx; d.dragStartY = d.fy;
         const rect = svgEl.getBoundingClientRect();
@@ -751,20 +863,37 @@ export default function OrganicCompetencyTree() {
       })
       .on('end', function (_event, d) {
         d3.select(this).style('cursor', 'grab');
-        d3.select(this).select('.glow-ring').transition().duration(300).attr('opacity', 0);
+        const kind = getSelectionKindForId(d?.data?.id);
+        const baseOpacity = kind ? (kind === 'selected' ? 0.95 : kind === 'desc' ? 0.72 : 0.66) : 0;
+        d3.select(this).select('.glow-ring').transition().duration(200).attr('opacity', baseOpacity);
         d.subtreeDrag = null;
       });
 
     nodeGroup
       .call(dragBehavior)
-      .on('mouseenter', function () { d3.select(this).select('.glow-ring').transition().duration(200).attr('opacity', 0.5); })
-      .on('mouseleave', function () { d3.select(this).select('.glow-ring').transition().duration(200).attr('opacity', 0); })
+      .on('mouseenter', function (_event, d) {
+        const kind = getSelectionKindForId(d?.data?.id);
+        const opacity = kind ? (kind === 'selected' ? 1 : 0.9) : 0.55;
+        d3.select(this).select('.glow-ring').transition().duration(120).attr('opacity', opacity);
+      })
+      .on('mouseleave', function (_event, d) {
+        const kind = getSelectionKindForId(d?.data?.id);
+        const baseOpacity = kind ? (kind === 'selected' ? 0.95 : kind === 'desc' ? 0.72 : 0.66) : 0;
+        d3.select(this).select('.glow-ring').transition().duration(120).attr('opacity', baseOpacity);
+      })
+      .on('click', function (event, d) {
+        event.stopPropagation();
+        setContextMenu(null);
+        applySelectionHighlight(d?.data?.id);
+      })
       .on('contextmenu', function (event, d) {
         event.preventDefault(); event.stopPropagation();
         const rect = svgEl.getBoundingClientRect();
         setContextMenu({ x: event.clientX - rect.left, y: event.clientY - rect.top, nodeId: d.data.id, nodeType: d.data.type, nodeName: d.data.name, mastery: d.data.mastery });
       });
 
+    // Ensure selection highlight is applied to the newly created node if needed.
+    applySelectionHighlight(selectionRef.current.selectedId);
     setContextMenu(null);
   }, [nextId, treeData, dimensions]);
 
@@ -874,6 +1003,7 @@ export default function OrganicCompetencyTree() {
     }
 
     setContextMenu(null);
+    applySelectionHighlight(selectionRef.current.selectedId);
   }, [treeData]);
 
   const reorganizeBranchesAndFruits = useCallback(() => {
@@ -1092,6 +1222,13 @@ export default function OrganicCompetencyTree() {
           return (Number.isFinite(sid) && subtreeSet.has(sid)) || (Number.isFinite(tid) && subtreeSet.has(tid));
         })
         .remove();
+
+      // If the selection was inside the deleted subtree, clear it.
+      if (selectionRef.current.selectedId && subtreeSet.has(selectionRef.current.selectedId)) {
+        applySelectionHighlight(null);
+      } else {
+        applySelectionHighlight(selectionRef.current.selectedId);
+      }
     }
 
     setTreeData(prevData => {
@@ -1261,6 +1398,13 @@ export default function OrganicCompetencyTree() {
     
     zoomBehaviorRef.current = zoomBehavior;
     svg.call(zoomBehavior);
+
+    // Clicking empty space clears selection + context menu.
+    svg.on('click', (event) => {
+      if (event.defaultPrevented) return;
+      setContextMenu(null);
+      applySelectionHighlight(null);
+    });
 
     const centerX = width / 2;
     const groundY = height * 0.58;
@@ -2508,7 +2652,9 @@ export default function OrganicCompetencyTree() {
       })
       .on('end', function (_event, d) {
         d3.select(this).style('cursor', 'grab');
-        d3.select(this).select('.glow-ring').transition().duration(300).attr('opacity', 0);
+        const kind = getSelectionKindForId(d?.data?.id);
+        const baseOpacity = kind ? (kind === 'selected' ? 0.95 : kind === 'desc' ? 0.72 : 0.66) : 0;
+        d3.select(this).select('.glow-ring').transition().duration(200).attr('opacity', baseOpacity);
         d.subtreeDrag = null;
       });
 
@@ -2520,13 +2666,29 @@ export default function OrganicCompetencyTree() {
 
     // Hover & context
     nodeSelection
-      .on('mouseenter', function () { d3.select(this).select('.glow-ring').transition().duration(200).attr('opacity', 0.5); })
-      .on('mouseleave', function () { d3.select(this).select('.glow-ring').transition().duration(200).attr('opacity', 0); })
+      .on('mouseenter', function (_event, d) {
+        const kind = getSelectionKindForId(d?.data?.id);
+        const opacity = kind ? (kind === 'selected' ? 1 : 0.9) : 0.55;
+        d3.select(this).select('.glow-ring').transition().duration(120).attr('opacity', opacity);
+      })
+      .on('mouseleave', function (_event, d) {
+        const kind = getSelectionKindForId(d?.data?.id);
+        const baseOpacity = kind ? (kind === 'selected' ? 0.95 : kind === 'desc' ? 0.72 : 0.66) : 0;
+        d3.select(this).select('.glow-ring').transition().duration(120).attr('opacity', baseOpacity);
+      })
+      .on('click', function (event, d) {
+        event.stopPropagation();
+        setContextMenu(null);
+        applySelectionHighlight(d?.data?.id);
+      })
       .on('contextmenu', function (event, d) {
         event.preventDefault(); event.stopPropagation();
         const rect = svgRef.current.getBoundingClientRect();
         setContextMenu({ x: event.clientX - rect.left, y: event.clientY - rect.top, nodeId: d.data.id, nodeType: d.data.type, nodeName: d.data.name, mastery: d.data.mastery });
       });
+
+    // If there is an existing selection, re-apply it after a full redraw.
+    applySelectionHighlight(selectionRef.current.selectedId);
 
     // Apply zoom: either restore saved transform or calculate initial
     if (isFirstRender.current) {

@@ -1,6 +1,7 @@
 import * as d3 from 'd3';
 import { createSceneDefs } from './sceneDefs.js';
 import { drawBackgroundAndGround } from './drawBackgroundAndGround.js';
+import { drawFloatingParticles } from './drawFloatingParticles.js';
 import { computeTreeGeometry } from './computeTreeGeometry.js';
 import { drawTrunkAndDecor } from './drawTrunkAndDecor.js';
 import { createLinkFns } from './createLinkFns.js';
@@ -17,6 +18,7 @@ export function renderFullScene({
   zoomRef,
   zoomBehaviorRef,
   linkFnsRef,
+  ambientTimerRef,
   isFirstRender,
   selectionRef,
   setContextMenu,
@@ -31,11 +33,20 @@ export function renderFullScene({
   // Save current transform before clearing.
   const savedTransform = zoomRef.current;
 
+  if (ambientTimerRef?.current) {
+    ambientTimerRef.current.stop();
+    ambientTimerRef.current = null;
+  }
+
   svg.selectAll('*').remove();
 
   const defs = svg.append('defs');
   createSceneDefs(defs);
 
+  const centerX = width / 2;
+  const groundY = height * 0.58;
+
+  const backgroundGroup = svg.append('g').attr('class', 'background-group').style('pointer-events', 'none');
   const mainGroup = svg.append('g').attr('class', 'main-group');
 
   // Setup zoom behavior.
@@ -45,6 +56,13 @@ export function renderFullScene({
     .on('zoom', (event) => {
       zoomRef.current = event.transform;
       mainGroup.attr('transform', event.transform);
+
+      // Parallax: move the cloud layer a bit less than the scene to create depth.
+      const t = event.transform;
+      const px = t.x * 0.35;
+      const py = t.y * 0.35;
+      const pk = 1 + (t.k - 1) * 0.12;
+      backgroundGroup.select('.bg-clouds').attr('transform', d3.zoomIdentity.translate(px, py).scale(pk));
     });
 
   zoomBehaviorRef.current = zoomBehavior;
@@ -57,10 +75,15 @@ export function renderFullScene({
     applySelectionHighlight(null);
   });
 
-  const centerX = width / 2;
-  const groundY = height * 0.58;
+  drawBackgroundAndGround({ defs, backgroundGroup, mainGroup, width, height, centerX, groundY });
 
-  drawBackgroundAndGround({ defs, mainGroup, width, height, centerX, groundY });
+  // Ambient particles must be drawn AFTER the background so they aren't covered by it.
+  // (These particles live inside `mainGroup`, so they zoom/pan with the scene.)
+  if (ambientTimerRef) {
+    ambientTimerRef.current = drawFloatingParticles({ svg, container: mainGroup, width, height, groundY });
+  } else {
+    drawFloatingParticles({ svg, container: mainGroup, width, height, groundY });
+  }
 
   const { allNodes, allLinks } = computeTreeGeometry({
     treeData,

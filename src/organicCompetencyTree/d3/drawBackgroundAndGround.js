@@ -1,8 +1,39 @@
 import * as d3 from 'd3';
 
-export function drawBackgroundAndGround({ defs, mainGroup, width, height, centerX, groundY }) {
+export function drawBackgroundAndGround({ defs, backgroundGroup, mainGroup, width, height, centerX, groundY }) {
+  const bgGroup = backgroundGroup ?? mainGroup;
+
   // Background (clear)
-  mainGroup.append('rect').attr('x', -width * 2).attr('y', -height * 2).attr('width', width * 5).attr('height', height * 5).attr('fill', 'url(#sky-gradient)');
+  bgGroup.append('rect').attr('x', -width * 2).attr('y', -height * 2).attr('width', width * 5).attr('height', height * 5).attr('fill', 'url(#sky-gradient)');
+
+  // Soft “cloud” blobs so the parallax is noticeable on pan/zoom.
+  // (Kept subtle to avoid distracting from the diagram.)
+  const cloudBlur = defs
+    .append('filter')
+    .attr('id', 'bg-cloud-blur')
+    .attr('x', '-50%')
+    .attr('y', '-50%')
+    .attr('width', '200%')
+    .attr('height', '200%');
+  cloudBlur.append('feGaussianBlur').attr('stdDeviation', 16);
+
+  const clouds = [
+    { cx: centerX - width * 0.26, cy: height * 0.16, rx: width * 0.22, ry: height * 0.08, o: 0.28 },
+    { cx: centerX + width * 0.22, cy: height * 0.12, rx: width * 0.18, ry: height * 0.07, o: 0.22 },
+    { cx: centerX + width * 0.05, cy: height * 0.22, rx: width * 0.28, ry: height * 0.09, o: 0.18 },
+  ];
+
+  const cloudLayer = bgGroup.append('g').attr('class', 'bg-clouds').attr('filter', 'url(#bg-cloud-blur)');
+  clouds.forEach((c) => {
+    cloudLayer
+      .append('ellipse')
+      .attr('cx', c.cx)
+      .attr('cy', c.cy)
+      .attr('rx', Math.max(20, c.rx))
+      .attr('ry', Math.max(12, c.ry))
+      .attr('fill', 'rgba(210,226,245,0.95)')
+      .attr('opacity', c.o);
+  });
   
   // ========================================
   // GROUND WITH 3D HILLS - ENHANCED VERSION

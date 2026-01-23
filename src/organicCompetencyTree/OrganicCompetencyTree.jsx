@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as d3 from 'd3';
 import initialData from './initialData.js';
 import { nodeConfig, typeLabels } from './constants.js';
+import './organicAnimations.css';
 import { getLabelWrapConfig, wrapSvgText } from './d3/textWrap.js';
 import { applySelectionStyles, computeSelection, createEmptySelection, getSelectionKind, isNodeVisible } from './d3/selectionHighlight.js';
 import { renderFullScene } from './d3/renderFullScene.js';
@@ -41,6 +42,7 @@ export default function OrganicCompetencyTree() {
   const linkFnsRef = useRef({ rootPath: null, branchPath: null, rootWidth: null, branchWidth: null });
   const treeDataRef = useRef(null);
   const selectionRef = useRef(createEmptySelection());
+  const ambientTimerRef = useRef(null);
   
   const [treeData, setTreeData] = useState(initialData);
   const [contextMenu, setContextMenu] = useState(null);
@@ -57,6 +59,12 @@ export default function OrganicCompetencyTree() {
   const [masteryValue, setMasteryValue] = useState(50);
 
   useEffect(() => { treeDataRef.current = treeData; }, [treeData]);
+
+  useEffect(() => {
+    return () => {
+      if (ambientTimerRef.current?.stop) ambientTimerRef.current.stop();
+    };
+  }, []);
 
   const getSelectionKindForId = useCallback((id) => getSelectionKind(selectionRef.current, id), []);
 
@@ -302,6 +310,7 @@ export default function OrganicCompetencyTree() {
       zoomRef,
       zoomBehaviorRef,
       linkFnsRef,
+      ambientTimerRef,
       isFirstRender,
       selectionRef,
       setContextMenu,

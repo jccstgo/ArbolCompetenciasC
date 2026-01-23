@@ -9,7 +9,7 @@ export function drawNodes({ mainGroup, allNodes, isFirstRender }) {
     .data(allNodes)
     .enter()
     .append('g')
-    .attr('class', d => `node node-${d.data.id}`)
+    .attr('class', d => `node node-${d.data.id} node-type-${d.data.type}`)
     .attr('transform', d => `translate(${d.fx}, ${d.fy})`)
     .style('cursor', d => d.data.type === 'trunk' ? 'default' : 'grab');
   
@@ -22,11 +22,24 @@ export function drawNodes({ mainGroup, allNodes, isFirstRender }) {
       const foliageGroup = nodeGroup.append('g').attr('class', 'foliage');
       
       leaves.forEach((leaf, i) => {
+        const seed = ((d.data.id ?? 0) * 9973 + i * 1013) % 1000;
+        const swayRot = 5.0 + (seed % 9) * 0.58; // ~5.0deg..10.2deg (+~40%)
+        const swayX = ((seed % 7) - 3) * 0.75; // ~-2.25px..2.25px (+~40%)
+        const swayY = -1.65 + ((seed % 5) - 2) * 0.36; // ~-2.37px..-0.93px (+~40%)
+        const dur = 3.6 + (seed % 100) / 100 * 2.1; // 3.6s..5.7s
+        const delay = ((leaf.delay ?? 0) + i * 60) / 1000;
+
         const ellipse = foliageGroup.append('ellipse')
+          .attr('class', 'breeze-leaf')
           .attr('cx', leaf.x)
           .attr('cy', leaf.y)
           .attr('fill', leaf.color)
-          .attr('transform', `rotate(${leaf.rotation} ${leaf.x} ${leaf.y})`);
+          .style('--leaf-rot', `${leaf.rotation}deg`)
+          .style('--sway-rot', `${swayRot}deg`)
+          .style('--sway-x', `${swayX}px`)
+          .style('--sway-y', `${swayY}px`)
+          .style('--breeze-duration', `${dur.toFixed(2)}s`)
+          .style('--breeze-delay', `${delay.toFixed(2)}s`);
         
         if (isFirstRender.current) {
           ellipse.attr('rx', 0).attr('ry', 0).attr('opacity', 0)
@@ -326,7 +339,7 @@ export function drawNodes({ mainGroup, allNodes, isFirstRender }) {
     .attr('stroke-linecap', 'round');
   
   fruitNodeGroups.append('ellipse')
-    .attr('class', 'apple-leaf')
+    .attr('class', 'apple-leaf breeze-leaf')
     .attr('cx', d => nodeConfig.fruit.radius * 0.42)
     .attr('cy', d => -nodeConfig.fruit.radius * 1.45)
     .attr('rx', d => nodeConfig.fruit.radius * 0.45)
@@ -334,7 +347,11 @@ export function drawNodes({ mainGroup, allNodes, isFirstRender }) {
     .attr('fill', 'url(#leaf-gradient)')
     .attr('stroke', '#1B5E20')
     .attr('stroke-width', 1.5)
-    .attr('transform', d => `rotate(-25 ${nodeConfig.fruit.radius * 0.42} ${-nodeConfig.fruit.radius * 1.45})`);
+    .style('--leaf-rot', `-25deg`)
+    .style('--sway-rot', `8.1deg`)
+    .style('--sway-x', `1.93px`)
+    .style('--sway-y', `-1.68px`)
+    .style('--breeze-duration', `4.6s`);
   
   if (isFirstRender.current) {
     fruitNodeGroups.attr('transform', 'scale(0)')

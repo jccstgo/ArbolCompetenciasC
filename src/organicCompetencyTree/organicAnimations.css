@@ -1,0 +1,61 @@
+/* Subtle micro-animations to give life to the scene (breeze on leaves/canopy). */
+
+@keyframes breeze-sway {
+  0% {
+    transform: rotate(var(--leaf-rot, 0deg)) translate(0px, 0px) scale(1);
+  }
+  50% {
+    transform: rotate(calc(var(--leaf-rot, 0deg) + var(--sway-rot, 2deg)))
+      translate(var(--sway-x, 1px), var(--sway-y, -1px))
+      scale(1.05);
+  }
+  100% {
+    transform: rotate(var(--leaf-rot, 0deg)) translate(0px, 0px) scale(1);
+  }
+}
+
+.breeze-leaf {
+  transform-box: fill-box;
+  transform-origin: center;
+  will-change: transform;
+  /* Keep a stable base pose even when animation is paused/disabled. */
+  transform: rotate(var(--leaf-rot, 0deg));
+  animation: breeze-sway var(--breeze-duration, 4.8s) ease-in-out infinite;
+  animation-delay: var(--breeze-delay, 0s);
+  /* Force a compositor layer on some browsers (selection added a filter, which made movement visible). */
+  filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0.001));
+}
+
+@keyframes canopy-breeze {
+  0% {
+    transform: translate(0px, 0px) rotate(0deg) scale(1);
+  }
+  50% {
+    transform: translate(2.65px, -3.65px) rotate(1.0deg) scale(1.031);
+  }
+  100% {
+    transform: translate(0px, 0px) rotate(0deg) scale(1);
+  }
+}
+
+.canopy-group {
+  transform-box: fill-box;
+  transform-origin: center;
+  will-change: transform;
+  animation: canopy-breeze 8.5s ease-in-out infinite;
+  filter: drop-shadow(0 0 0 rgba(0, 0, 0, 0.001));
+}
+
+/* When selecting a branch/fruit node, keep its local leaves still to avoid a “jittery” feel. */
+.node-type-branch.hl-selected .breeze-leaf,
+.node-type-fruit.hl-selected .breeze-leaf {
+  animation-play-state: paused !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .breeze-leaf,
+  .canopy-group {
+    animation: none !important;
+    filter: none !important;
+  }
+}

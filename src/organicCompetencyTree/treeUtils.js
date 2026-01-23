@@ -1,3 +1,5 @@
+import { typeIcons } from './constants.js';
+
 export function deepClone(obj) {
   return JSON.parse(JSON.stringify(obj));
 }
@@ -71,15 +73,15 @@ export function getMenuOptions(node) {
 
   if (nodeType === 'trunk') {
     options.push(
-      { label: 'Agregar Raíz', icon: '🌱', action: 'addRoot' },
-      { label: 'Agregar Rama', icon: '🌿', action: 'addBranch' },
+      { label: 'Agregar Raíz', icon: typeIcons.root, action: 'addRoot' },
+      { label: 'Agregar Rama', icon: typeIcons.branch, action: 'addBranch' },
     );
   } else if (nodeType === 'root') {
-    options.push({ label: 'Agregar Raíz', icon: '🌱', action: 'addRoot' });
+    options.push({ label: 'Agregar Raíz', icon: typeIcons.root, action: 'addRoot' });
   } else if (nodeType === 'branch') {
     options.push(
-      { label: 'Agregar Rama', icon: '🌿', action: 'addBranch' },
-      { label: 'Agregar Fruto', icon: '🍊', action: 'addFruit' },
+      { label: 'Agregar Rama', icon: typeIcons.branch, action: 'addBranch' },
+      { label: 'Agregar Fruto', icon: typeIcons.fruit, action: 'addFruit' },
     );
   } else if (nodeType === 'fruit') {
     options.push({ label: 'Editar Dominio %', icon: '📊', action: 'editMastery' });

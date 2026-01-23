@@ -5,6 +5,14 @@ export const nodeConfig = {
   fruit: { radius: 14, symbol: '', fontSize: 9 },
 };
 
+// Icons used consistently across legend + menus + controls.
+export const typeIcons = {
+  trunk: '🌳',
+  root: '◆',
+  branch: '🌿',
+  fruit: '🍎',
+};
+
 export const typeLabels = {
   trunk: 'Tronco',
   root: 'Raíz',

@@ -1,8 +1,10 @@
+import { typeIcons } from '../constants.js';
+
 const legendItems = [
-  { type: 'trunk', label: 'Copa – Identidad', color: '#4CAF50', icon: '🌳' },
-  { type: 'root', label: 'Raíz – Fundamento', color: '#8D6E63', icon: '◆' },
-  { type: 'branch', label: 'Rama – Especialización', color: '#81C784', icon: '🌿' },
-  { type: 'fruit', label: 'Fruto – Competencia', color: '#EF5350', icon: '🍎' },
+  { type: 'trunk', label: 'Copa – Identidad', color: '#4CAF50', icon: typeIcons.trunk },
+  { type: 'root', label: 'Raíz – Fundamento', color: '#8D6E63', icon: typeIcons.root },
+  { type: 'branch', label: 'Rama – Especialización', color: '#81C784', icon: typeIcons.branch },
+  { type: 'fruit', label: 'Fruto – Competencia', color: '#EF5350', icon: typeIcons.fruit },
 ];
 
 export default function Legend() {

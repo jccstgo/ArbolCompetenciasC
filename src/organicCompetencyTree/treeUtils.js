@@ -85,6 +85,8 @@ export function getMenuOptions(node) {
     options.push({ label: 'Editar Dominio %', icon: '📊', action: 'editMastery' });
   }
 
+  options.push({ label: 'Centrar', icon: '🎯', action: 'center' });
+
   if (nodeType !== 'fruit' && hasChildren) {
     const targetLabel = getCollapseTargetLabel();
     options.push({

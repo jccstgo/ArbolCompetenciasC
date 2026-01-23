@@ -45,6 +45,28 @@ export function getMenuOptions(node) {
   const hasChildren = (node?.children?.length ?? 0) > 0 || (node?._children?.length ?? 0) > 0;
   const isCollapsed = (node?.children?.length ?? 0) === 0 && (node?._children?.length ?? 0) > 0;
 
+  const childTypes = Array.from(
+    new Set(
+      getAllChildren(node)
+        .map((c) => c?.type)
+        .filter(Boolean),
+    ),
+  );
+
+  const getCollapseTargetLabel = () => {
+    const hasRoots = childTypes.includes('root');
+    const hasBranches = childTypes.includes('branch');
+    const hasFruits = childTypes.includes('fruit');
+
+    // Prefer explicit labels users recognize in the diagram.
+    if (hasRoots && hasBranches) return 'Raíces y Ramas';
+    if (hasBranches && hasFruits) return 'Ramas y Frutos';
+    if (hasRoots) return 'Raíces';
+    if (hasBranches) return 'Ramas';
+    if (hasFruits) return 'Frutos';
+    return 'Elementos';
+  };
+
   const options = [];
 
   if (nodeType === 'trunk') {
@@ -64,8 +86,9 @@ export function getMenuOptions(node) {
   }
 
   if (nodeType !== 'fruit' && hasChildren) {
+    const targetLabel = getCollapseTargetLabel();
     options.push({
-      label: isCollapsed ? 'Expandir Hijos' : 'Colapsar Hijos',
+      label: isCollapsed ? `Expandir ${targetLabel}` : `Colapsar ${targetLabel}`,
       icon: isCollapsed ? '+' : '−',
       iconColor: '#4CAF50',
       action: 'toggleChildren',

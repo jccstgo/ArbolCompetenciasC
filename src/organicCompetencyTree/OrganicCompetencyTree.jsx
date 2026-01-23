@@ -358,18 +358,49 @@ export default function OrganicCompetencyTree() {
     } else {
       const baseW = branchWidth(linkDatum);
 
+      // Shadow layer
+      linksGroup
+        .append('path')
+        .datum(linkDatum)
+        .attr('class', 'branch-link branch-link-shadow link')
+        .attr('d', branchPath)
+        .attr('fill', 'none')
+        .attr('stroke', '#2D1B0E')
+        .attr('stroke-width', baseW + 4)
+        .attr('stroke-linecap', 'round')
+        .attr('stroke-opacity', 0.4)
+        .attr('data-source-id', parentId)
+        .attr('data-target-id', childId);
+
+      // Main bark layer
       linksGroup
         .append('path')
         .datum(linkDatum)
         .attr('class', 'branch-link branch-link-base link')
         .attr('d', branchPath)
         .attr('fill', 'none')
-        .attr('stroke', 'url(#bark-gradient)')
+        .attr('stroke', 'url(#branch-bark-gradient)')
         .attr('stroke-width', baseW)
         .attr('stroke-linecap', 'round')
         .attr('data-source-id', parentId)
         .attr('data-target-id', childId);
 
+      // Bark texture
+      linksGroup
+        .append('path')
+        .datum(linkDatum)
+        .attr('class', 'branch-link branch-link-texture-dark link')
+        .attr('d', branchPath)
+        .attr('fill', 'none')
+        .attr('stroke', '#3E2723')
+        .attr('stroke-width', Math.max(1, baseW * 0.15))
+        .attr('stroke-linecap', 'round')
+        .attr('stroke-opacity', 0.35)
+        .attr('stroke-dasharray', `${baseW * 0.8} ${baseW * 1.2}`)
+        .attr('data-source-id', parentId)
+        .attr('data-target-id', childId);
+
+      // Highlight layer
       linksGroup
         .append('path')
         .datum(linkDatum)
@@ -377,8 +408,22 @@ export default function OrganicCompetencyTree() {
         .attr('d', branchPath)
         .attr('fill', 'none')
         .attr('stroke', '#A1887F')
-        .attr('stroke-opacity', 0.55)
-        .attr('stroke-width', Math.max(2, baseW * 0.55))
+        .attr('stroke-opacity', 0.6)
+        .attr('stroke-width', Math.max(2, baseW * 0.4))
+        .attr('stroke-linecap', 'round')
+        .attr('data-source-id', parentId)
+        .attr('data-target-id', childId);
+
+      // Secondary highlight
+      linksGroup
+        .append('path')
+        .datum(linkDatum)
+        .attr('class', 'branch-link branch-link-highlight2 link')
+        .attr('d', branchPath)
+        .attr('fill', 'none')
+        .attr('stroke', '#BCAAA4')
+        .attr('stroke-opacity', 0.25)
+        .attr('stroke-width', Math.max(1, baseW * 0.2))
         .attr('stroke-linecap', 'round')
         .attr('data-source-id', parentId)
         .attr('data-target-id', childId);
@@ -681,7 +726,7 @@ export default function OrganicCompetencyTree() {
         }
 
         linksGroup.selectAll('.root-link, .root-link-highlight').attr('d', rootPath);
-        linksGroup.selectAll('.branch-link-base, .branch-link-highlight').attr('d', branchPath);
+        linksGroup.selectAll('.branch-link-shadow, .branch-link-base, .branch-link-texture-dark, .branch-link-highlight, .branch-link-highlight2').attr('d', branchPath);
         if (branchTwigPath) linksGroup.selectAll('.branch-twig').attr('d', branchTwigPath);
       })
       .on('end', function (_event, d) {
@@ -960,9 +1005,25 @@ export default function OrganicCompetencyTree() {
     barkGrad.append('stop').attr('offset', '70%').attr('stop-color', '#5D4037');
     barkGrad.append('stop').attr('offset', '100%').attr('stop-color', '#3E2723');
 
+    // Branch bark gradient - perpendicular to branch direction for realistic wood look
+    const branchBarkGrad = defs.append('linearGradient').attr('id', 'branch-bark-gradient').attr('x1', '0%').attr('y1', '0%').attr('x2', '0%').attr('y2', '100%');
+    branchBarkGrad.append('stop').attr('offset', '0%').attr('stop-color', '#5D4037');
+    branchBarkGrad.append('stop').attr('offset', '15%').attr('stop-color', '#6D4C41');
+    branchBarkGrad.append('stop').attr('offset', '35%').attr('stop-color', '#795548');
+    branchBarkGrad.append('stop').attr('offset', '50%').attr('stop-color', '#8D6E63');
+    branchBarkGrad.append('stop').attr('offset', '65%').attr('stop-color', '#795548');
+    branchBarkGrad.append('stop').attr('offset', '85%').attr('stop-color', '#6D4C41');
+    branchBarkGrad.append('stop').attr('offset', '100%').attr('stop-color', '#4E342E');
+
     const leafGrad = defs.append('radialGradient').attr('id', 'leaf-gradient').attr('cx', '30%').attr('cy', '30%');
     leafGrad.append('stop').attr('offset', '0%').attr('stop-color', '#81C784');
     leafGrad.append('stop').attr('offset', '100%').attr('stop-color', '#2E7D32');
+
+    // Canopy gradient for middle foliage layer
+    const canopyGrad = defs.append('radialGradient').attr('id', 'canopy-gradient').attr('cx', '40%').attr('cy', '35%');
+    canopyGrad.append('stop').attr('offset', '0%').attr('stop-color', '#66BB6A');
+    canopyGrad.append('stop').attr('offset', '50%').attr('stop-color', '#43A047');
+    canopyGrad.append('stop').attr('offset', '100%').attr('stop-color', '#2E7D32');
 
     const rootNodeGrad = defs.append('radialGradient').attr('id', 'root-node-gradient').attr('cx', '35%').attr('cy', '30%');
     rootNodeGrad.append('stop').attr('offset', '0%').attr('stop-color', '#A1887F');
@@ -1033,16 +1094,16 @@ export default function OrganicCompetencyTree() {
       d.leaves = [];
     });
 
-    const trunkNode = { 
-      data: treeData, 
-      fx: centerX, 
-      fy: groundY - 50, 
+    const trunkNode = {
+      data: treeData,
+      fx: centerX,
+      fy: groundY - 140, // Positioned at top of taller trunk
       depth: 0,
       leaves: generateLeafPositions('trunk', treeData.id)
     };
 
     const effectiveRadius = (t) => {
-      if (t === 'trunk') return 70;
+      if (t === 'trunk') return 85; // Larger radius for bigger canopy
       if (t === 'root') return nodeConfig.root.radius * 1.7;
       if (t === 'branch') return nodeConfig.branch.radius * 1.4;
       if (t === 'fruit') return nodeConfig.fruit.radius * 1.8;
@@ -1149,27 +1210,105 @@ export default function OrganicCompetencyTree() {
       }
     });
 
-    // Draw trunk
-    const trunkH = 100;
-    const trunkTopW = 30;
-    const trunkBotW = 45;
+    // Draw trunk with organic shape - taller like an oak tree
+    const trunkH = 190;
+    const trunkTopW = 32;
+    const trunkBotW = 55;
+
+    // Main trunk shape with more organic curves - oak-like proportions
+    const trunkPath = `
+      M ${centerX - trunkBotW} ${groundY + 18}
+      Q ${centerX - trunkBotW - 6} ${groundY - trunkH * 0.15} ${centerX - trunkBotW + 2} ${groundY - trunkH * 0.3}
+      Q ${centerX - trunkBotW - 3} ${groundY - trunkH * 0.5} ${centerX - trunkBotW + 5} ${groundY - trunkH * 0.65}
+      Q ${centerX - trunkBotW - 2} ${groundY - trunkH * 0.8} ${centerX - trunkTopW} ${groundY - trunkH}
+      Q ${centerX - 10} ${groundY - trunkH - 12} ${centerX} ${groundY - trunkH - 8}
+      Q ${centerX + 10} ${groundY - trunkH - 12} ${centerX + trunkTopW} ${groundY - trunkH}
+      Q ${centerX + trunkBotW + 2} ${groundY - trunkH * 0.8} ${centerX + trunkBotW - 5} ${groundY - trunkH * 0.65}
+      Q ${centerX + trunkBotW + 3} ${groundY - trunkH * 0.5} ${centerX + trunkBotW - 2} ${groundY - trunkH * 0.3}
+      Q ${centerX + trunkBotW + 6} ${groundY - trunkH * 0.15} ${centerX + trunkBotW} ${groundY + 18}
+      Z
+    `;
+
     mainGroup.append('path')
-      .attr('d', `M ${centerX - trunkBotW} ${groundY + 15} Q ${centerX - trunkBotW - 8} ${groundY - trunkH / 2} ${centerX - trunkTopW} ${groundY - trunkH} L ${centerX + trunkTopW} ${groundY - trunkH} Q ${centerX + trunkBotW + 8} ${groundY - trunkH / 2} ${centerX + trunkBotW} ${groundY + 15} Z`)
+      .attr('d', trunkPath)
       .attr('fill', 'url(#bark-gradient)')
       .attr('stroke', '#3E2723')
-      .attr('stroke-width', 2)
+      .attr('stroke-width', 2.5)
       .attr('filter', 'url(#drop-shadow)');
 
-    // Trunk texture
-    for (let i = 0; i < 6; i++) {
-      const tx = centerX - 25 + Math.random() * 50;
-      const ty1 = groundY - Math.random() * trunkH * 0.9;
-      mainGroup.append('line')
-        .attr('x1', tx).attr('y1', ty1)
-        .attr('x2', tx + (Math.random() - 0.5) * 8).attr('y2', ty1 - 15 - Math.random() * 25)
-        .attr('stroke', 'rgba(0,0,0,0.15)')
-        .attr('stroke-width', 1 + Math.random() * 2);
+    // Trunk bark texture - vertical cracks (more lines for taller trunk)
+    const barkLines = [
+      { x: centerX - 35, amp: 3 },
+      { x: centerX - 25, amp: 4 },
+      { x: centerX - 15, amp: 3 },
+      { x: centerX - 5, amp: 2 },
+      { x: centerX + 5, amp: 3 },
+      { x: centerX + 15, amp: 4 },
+      { x: centerX + 25, amp: 3 },
+      { x: centerX + 35, amp: 2 },
+    ];
+
+    barkLines.forEach((bark, i) => {
+      const startY = groundY - trunkH * 0.08;
+      const endY = groundY - trunkH * 0.88;
+      const segments = 10; // More segments for taller trunk
+      let pathD = `M ${bark.x} ${startY}`;
+
+      for (let j = 1; j <= segments; j++) {
+        const t = j / segments;
+        const y = startY + (endY - startY) * t;
+        const wobble = Math.sin(i * 2.3 + j * 1.2) * bark.amp;
+        pathD += ` L ${bark.x + wobble} ${y}`;
+      }
+
+      mainGroup.append('path')
+        .attr('d', pathD)
+        .attr('fill', 'none')
+        .attr('stroke', 'rgba(30, 20, 15, 0.22)')
+        .attr('stroke-width', 1.2 + Math.random() * 0.8)
+        .attr('stroke-linecap', 'round');
+    });
+
+    // Horizontal bark rings (more rings for taller trunk)
+    for (let i = 0; i < 7; i++) {
+      const ringY = groundY - trunkH * (0.12 + i * 0.12);
+      const ringWidth = trunkBotW - (trunkBotW - trunkTopW) * (0.12 + i * 0.12);
+
+      mainGroup.append('path')
+        .attr('d', `M ${centerX - ringWidth + 5} ${ringY} Q ${centerX} ${ringY + 2 + Math.random() * 2} ${centerX + ringWidth - 5} ${ringY}`)
+        .attr('fill', 'none')
+        .attr('stroke', 'rgba(30, 20, 15, 0.12)')
+        .attr('stroke-width', 0.8 + Math.random() * 0.5);
     }
+
+    // Decorative roots at base (wider for bigger trunk)
+    const rootShapes = [
+      { startX: centerX - trunkBotW + 5, endX: centerX - trunkBotW - 35, endY: groundY + 28, cpY: 10 },
+      { startX: centerX - trunkBotW + 25, endX: centerX - trunkBotW - 15, endY: groundY + 24, cpY: 6 },
+      { startX: centerX + trunkBotW - 5, endX: centerX + trunkBotW + 35, endY: groundY + 28, cpY: 10 },
+      { startX: centerX + trunkBotW - 25, endX: centerX + trunkBotW + 15, endY: groundY + 24, cpY: 6 },
+      { startX: centerX - 20, endX: centerX - 45, endY: groundY + 30, cpY: 14 },
+      { startX: centerX + 20, endX: centerX + 45, endY: groundY + 30, cpY: 14 },
+    ];
+
+    rootShapes.forEach((root) => {
+      const cpX = (root.startX + root.endX) / 2;
+      mainGroup.append('path')
+        .attr('d', `M ${root.startX} ${groundY + 15} Q ${cpX} ${groundY + root.cpY} ${root.endX} ${root.endY}`)
+        .attr('fill', 'none')
+        .attr('stroke', '#5D4037')
+        .attr('stroke-width', 8)
+        .attr('stroke-linecap', 'round');
+
+      // Root highlight
+      mainGroup.append('path')
+        .attr('d', `M ${root.startX} ${groundY + 15} Q ${cpX} ${groundY + root.cpY} ${root.endX} ${root.endY}`)
+        .attr('fill', 'none')
+        .attr('stroke', '#8D6E63')
+        .attr('stroke-width', 3)
+        .attr('stroke-linecap', 'round')
+        .attr('stroke-opacity', 0.5);
+    });
 
     // Link generators
     const generateBranchPath = (d) => {
@@ -1177,13 +1316,23 @@ export default function OrganicCompetencyTree() {
       const tx = d.target.fx, ty = d.target.fy;
       const dx = tx - sx, dy = ty - sy;
       const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-      const perpX = -dy / dist * 18 * Math.sin(d.target.data.id * 0.7);
-      const perpY = dx / dist * 18 * Math.cos(d.target.data.id * 0.7);
-      const cp1x = sx + dx * 0.3 + perpX;
-      const cp1y = sy + dy * 0.3 + perpY * 0.6;
-      const cp2x = sx + dx * 0.7 - perpX * 0.4;
-      const cp2y = sy + dy * 0.7 - perpY * 0.4;
-      return `M ${sx} ${sy} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${tx} ${ty}`;
+      const seed = d.target?.data?.id ?? 0;
+
+      // More organic curves with natural wobble
+      const wobbleAmp = 12 + Math.sin(seed * 0.5) * 6;
+      const perpX = -dy / dist * wobbleAmp;
+      const perpY = dx / dist * wobbleAmp;
+
+      // Multiple control points for more natural branch shape
+      const cp1x = sx + dx * 0.2 + perpX * Math.sin(seed * 0.7) * 0.8;
+      const cp1y = sy + dy * 0.2 + perpY * Math.cos(seed * 0.7) * 0.5;
+      const cp2x = sx + dx * 0.5 + perpX * Math.cos(seed * 1.1) * 0.6;
+      const cp2y = sy + dy * 0.5 - perpY * Math.sin(seed * 0.9) * 0.4;
+      const cp3x = sx + dx * 0.8 - perpX * Math.sin(seed * 0.6) * 0.3;
+      const cp3y = sy + dy * 0.8 - perpY * Math.cos(seed * 0.8) * 0.3;
+
+      // Use cubic bezier segments for smoother, more organic curves
+      return `M ${sx} ${sy} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${(sx + tx) / 2} ${(sy + ty) / 2} S ${cp3x} ${cp3y}, ${tx} ${ty}`;
     };
 
     const generateRootPath = (d) => {
@@ -1219,9 +1368,26 @@ export default function OrganicCompetencyTree() {
       return d3.line().curve(d3.curveBasis)(points);
     };
 
-    const getLinkWidth = (d) => d.type === 'root' ? Math.max(3, 12 - d.target.depth * 2.5) : Math.max(2, 14 - d.target.depth * 3.5);
-    const getRootLinkWidth = (d) => Math.max(4, 14 - (d.target?.depth || 1) * 2.4);
-    const getBranchLinkWidth = (d) => Math.max(2.5, 14 - (d.target?.depth || 1) * 3.2);
+    const getLinkWidth = (d) => d.type === 'root' ? Math.max(4, 16 - d.target.depth * 2.5) : Math.max(4, 22 - d.target.depth * 4);
+    const getRootLinkWidth = (d) => Math.max(5, 18 - (d.target?.depth || 1) * 2.8);
+
+    // Significantly thicker branches near the trunk, tapering as they extend
+    const getBranchLinkWidth = (d) => {
+      const depth = d.target?.depth || 1;
+      const sourceType = d.source?.data?.type;
+
+      // Branches directly from trunk are thickest
+      if (sourceType === 'trunk') {
+        return 22;
+      }
+
+      // Progressive thinning based on depth
+      // depth 1: ~22px, depth 2: ~14px, depth 3: ~9px, depth 4+: ~5-6px
+      const baseWidth = 26;
+      const decayFactor = 0.55; // Each level is 55% of the previous
+      const width = baseWidth * Math.pow(decayFactor, depth);
+      return Math.max(4, Math.min(22, width));
+    };
 
     const generateBranchTwigPath = (d) => {
       const sx = d.source.fx, sy = d.source.fy;
@@ -1288,18 +1454,52 @@ export default function OrganicCompetencyTree() {
 
     const branchLinks = allLinks.filter(l => l.type === 'branch');
 
+    // Shadow/outline layer for depth
+    linksGroup.selectAll('.branch-link-shadow')
+      .data(branchLinks)
+      .enter().append('path')
+      .attr('class', 'branch-link branch-link-shadow link')
+      .attr('d', generateBranchPath)
+      .attr('fill', 'none')
+      .attr('stroke', '#2D1B0E')
+      .attr('stroke-width', d => isFirstRender.current ? 0 : getBranchLinkWidth(d) + 4)
+      .attr('stroke-linecap', 'round')
+      .attr('stroke-opacity', 0.4)
+      .attr('data-source-id', d => d.source.data.id)
+      .attr('data-target-id', d => d.target.data.id);
+
+    // Main bark layer
     const branchLinkBaseSel = linksGroup.selectAll('.branch-link-base')
       .data(branchLinks)
       .enter().append('path')
       .attr('class', 'branch-link branch-link-base link')
       .attr('d', generateBranchPath)
       .attr('fill', 'none')
-      .attr('stroke', 'url(#bark-gradient)')
+      .attr('stroke', 'url(#branch-bark-gradient)')
       .attr('stroke-width', d => isFirstRender.current ? 0 : getBranchLinkWidth(d))
       .attr('stroke-linecap', 'round')
       .attr('data-source-id', d => d.source.data.id)
       .attr('data-target-id', d => d.target.data.id);
 
+    // Bark texture - dark grooves
+    linksGroup.selectAll('.branch-link-texture-dark')
+      .data(branchLinks)
+      .enter().append('path')
+      .attr('class', 'branch-link branch-link-texture-dark link')
+      .attr('d', generateBranchPath)
+      .attr('fill', 'none')
+      .attr('stroke', '#3E2723')
+      .attr('stroke-width', d => Math.max(1, getBranchLinkWidth(d) * 0.15))
+      .attr('stroke-linecap', 'round')
+      .attr('stroke-opacity', 0.35)
+      .attr('stroke-dasharray', d => {
+        const w = getBranchLinkWidth(d);
+        return `${w * 0.8} ${w * 1.2}`;
+      })
+      .attr('data-source-id', d => d.source.data.id)
+      .attr('data-target-id', d => d.target.data.id);
+
+    // Highlight layer - gives 3D rounded appearance
     const branchLinkHighlightSel = linksGroup.selectAll('.branch-link-highlight')
       .data(branchLinks)
       .enter().append('path')
@@ -1307,8 +1507,22 @@ export default function OrganicCompetencyTree() {
       .attr('d', generateBranchPath)
       .attr('fill', 'none')
       .attr('stroke', '#A1887F')
-      .attr('stroke-opacity', 0.55)
-      .attr('stroke-width', d => isFirstRender.current ? 0 : Math.max(2, getBranchLinkWidth(d) * 0.55))
+      .attr('stroke-opacity', 0.6)
+      .attr('stroke-width', d => isFirstRender.current ? 0 : Math.max(2, getBranchLinkWidth(d) * 0.4))
+      .attr('stroke-linecap', 'round')
+      .attr('data-source-id', d => d.source.data.id)
+      .attr('data-target-id', d => d.target.data.id);
+
+    // Secondary highlight for more depth
+    linksGroup.selectAll('.branch-link-highlight2')
+      .data(branchLinks)
+      .enter().append('path')
+      .attr('class', 'branch-link branch-link-highlight2 link')
+      .attr('d', generateBranchPath)
+      .attr('fill', 'none')
+      .attr('stroke', '#BCAAA4')
+      .attr('stroke-opacity', 0.25)
+      .attr('stroke-width', d => Math.max(1, getBranchLinkWidth(d) * 0.2))
       .attr('stroke-linecap', 'round')
       .attr('data-source-id', d => d.source.data.id)
       .attr('data-target-id', d => d.target.data.id);
@@ -1331,8 +1545,29 @@ export default function OrganicCompetencyTree() {
       .attr('data-target-id', d => d.target.data.id);
 
     if (isFirstRender.current) {
+      // Animate shadow layer
+      linksGroup.selectAll('.branch-link-shadow')
+        .attr('stroke-width', 0)
+        .transition().duration(900).delay((d, i) => 250 + i * 60)
+        .attr('stroke-width', d => getBranchLinkWidth(d) + 4);
+
+      // Animate main branch
       branchLinkBaseSel.transition().duration(900).delay((d, i) => 250 + i * 60).attr('stroke-width', getBranchLinkWidth);
-      branchLinkHighlightSel.transition().duration(900).delay((d, i) => 250 + i * 60).attr('stroke-width', d => Math.max(2, getBranchLinkWidth(d) * 0.55));
+
+      // Animate texture
+      linksGroup.selectAll('.branch-link-texture-dark')
+        .attr('stroke-opacity', 0)
+        .transition().duration(900).delay((d, i) => 350 + i * 60)
+        .attr('stroke-opacity', 0.35);
+
+      // Animate highlights
+      branchLinkHighlightSel.transition().duration(900).delay((d, i) => 250 + i * 60).attr('stroke-width', d => Math.max(2, getBranchLinkWidth(d) * 0.4));
+
+      linksGroup.selectAll('.branch-link-highlight2')
+        .attr('stroke-opacity', 0)
+        .transition().duration(900).delay((d, i) => 300 + i * 60)
+        .attr('stroke-opacity', 0.25);
+
       branchTwigSel.attr('stroke-opacity', 0)
         .transition().duration(900).delay((d, i) => 350 + i * 70)
         .attr('stroke-opacity', 0.7);
@@ -1346,7 +1581,7 @@ export default function OrganicCompetencyTree() {
       .append('g')
       .attr('class', d => `node node-${d.data.id}`)
       .attr('transform', d => `translate(${d.fx}, ${d.fy})`)
-      .style('cursor', 'grab');
+      .style('cursor', d => d.data.type === 'trunk' ? 'default' : 'grab');
 
     // Foliage (inside node group)
     nodeSelection.each(function(d) {
@@ -1529,20 +1764,111 @@ export default function OrganicCompetencyTree() {
       fruitNodeGroups.attr('transform', 'scale(1)');
     }
 
-    // Trunk crown
-    const trunkCrown = nodeSelection.filter(d => d.data.type === 'trunk')
-      .append('circle')
-      .attr('class', 'node-shape')
-      .attr('cy', -45)
-      .attr('fill', 'url(#leaf-gradient)')
-      .attr('stroke', '#1B5E20')
-      .attr('stroke-width', 3)
-      .attr('filter', 'url(#drop-shadow)');
-    
+    // Trunk crown - organic canopy with multiple overlapping circles (larger for oak-like tree)
+    const trunkNodes = nodeSelection.filter(d => d.data.type === 'trunk');
+
+    // Create canopy group for layered foliage effect
+    const canopyGroup = trunkNodes.append('g').attr('class', 'canopy-group');
+
+    // Background foliage layer (darker, larger circles) - scaled up for bigger tree
+    const canopyBackCircles = [
+      { cx: -50, cy: -90, r: 52 },
+      { cx: 55, cy: -85, r: 48 },
+      { cx: 0, cy: -110, r: 58 },
+      { cx: -35, cy: -55, r: 44 },
+      { cx: 42, cy: -50, r: 42 },
+      { cx: -60, cy: -70, r: 38 },
+      { cx: 65, cy: -65, r: 36 },
+    ];
+
+    canopyBackCircles.forEach((c, i) => {
+      canopyGroup.append('circle')
+        .attr('class', 'canopy-back')
+        .attr('cx', c.cx)
+        .attr('cy', c.cy)
+        .attr('r', isFirstRender.current ? 0 : c.r)
+        .attr('fill', '#1B5E20')
+        .attr('opacity', 0.7);
+    });
+
+    // Middle foliage layer
+    const canopyMidCircles = [
+      { cx: -30, cy: -80, r: 50 },
+      { cx: 35, cy: -75, r: 46 },
+      { cx: 0, cy: -95, r: 55 },
+      { cx: -55, cy: -65, r: 40 },
+      { cx: 50, cy: -60, r: 38 },
+      { cx: -15, cy: -50, r: 35 },
+      { cx: 20, cy: -45, r: 33 },
+    ];
+
+    canopyMidCircles.forEach((c, i) => {
+      canopyGroup.append('circle')
+        .attr('class', 'canopy-mid')
+        .attr('cx', c.cx)
+        .attr('cy', c.cy)
+        .attr('r', isFirstRender.current ? 0 : c.r)
+        .attr('fill', 'url(#canopy-gradient)')
+        .attr('opacity', 0.85);
+    });
+
+    // Front foliage layer (brightest, main visible circles)
+    const canopyFrontCircles = [
+      { cx: -22, cy: -75, r: 45 },
+      { cx: 25, cy: -70, r: 42 },
+      { cx: 0, cy: -88, r: 48 },
+      { cx: -42, cy: -58, r: 35 },
+      { cx: 40, cy: -52, r: 34 },
+      { cx: 0, cy: -60, r: 40 },
+      { cx: -18, cy: -45, r: 30 },
+      { cx: 22, cy: -42, r: 28 },
+    ];
+
+    canopyFrontCircles.forEach((c, i) => {
+      canopyGroup.append('circle')
+        .attr('class', 'canopy-front')
+        .attr('cx', c.cx)
+        .attr('cy', c.cy)
+        .attr('r', isFirstRender.current ? 0 : c.r)
+        .attr('fill', 'url(#leaf-gradient)')
+        .attr('stroke', '#2E7D32')
+        .attr('stroke-width', 1)
+        .attr('opacity', 0.95);
+    });
+
+    // Add highlight circles for depth
+    const highlightCircles = [
+      { cx: -15, cy: -85, r: 24 },
+      { cx: 18, cy: -78, r: 20 },
+      { cx: -35, cy: -68, r: 16 },
+      { cx: 30, cy: -62, r: 14 },
+    ];
+
+    highlightCircles.forEach((c) => {
+      canopyGroup.append('circle')
+        .attr('class', 'canopy-highlight')
+        .attr('cx', c.cx)
+        .attr('cy', c.cy)
+        .attr('r', isFirstRender.current ? 0 : c.r)
+        .attr('fill', '#A5D6A7')
+        .attr('opacity', 0.4);
+    });
+
+    // Apply drop shadow to entire canopy
+    canopyGroup.attr('filter', 'url(#drop-shadow)');
+
+    // Animate canopy on first render
     if (isFirstRender.current) {
-      trunkCrown.attr('r', 0).transition().duration(800).attr('r', 50);
-    } else {
-      trunkCrown.attr('r', 50);
+      canopyGroup.selectAll('circle')
+        .transition()
+        .duration(800)
+        .delay((d, i) => i * 30)
+        .attr('r', function() {
+          const el = d3.select(this);
+          const targetR = [...canopyBackCircles, ...canopyMidCircles, ...canopyFrontCircles, ...highlightCircles]
+            .find(c => c.cx === parseFloat(el.attr('cx')) && c.cy === parseFloat(el.attr('cy')))?.r || 30;
+          return targetR;
+        });
     }
 
     // Node symbols
@@ -1697,7 +2023,7 @@ export default function OrganicCompetencyTree() {
         }
 
         linksGroup.selectAll('.root-link, .root-link-highlight').attr('d', generateRootPath);
-        linksGroup.selectAll('.branch-link-base, .branch-link-highlight').attr('d', generateBranchPath);
+        linksGroup.selectAll('.branch-link-shadow, .branch-link-base, .branch-link-texture-dark, .branch-link-highlight, .branch-link-highlight2').attr('d', generateBranchPath);
         linksGroup.selectAll('.branch-twig').attr('d', generateBranchTwigPath);
       })
       .on('end', function (_event, d) {
@@ -1706,7 +2032,11 @@ export default function OrganicCompetencyTree() {
         d.subtreeDrag = null;
       });
 
-    nodeSelection.call(dragBehavior);
+    // Apply drag behavior only to non-trunk nodes (trunk/canopy is fixed)
+    nodeSelection.filter(d => d.data.type !== 'trunk').call(dragBehavior);
+
+    // Set cursor style for trunk to indicate it's not draggable
+    nodeSelection.filter(d => d.data.type === 'trunk').style('cursor', 'default');
 
     // Hover & context
     nodeSelection

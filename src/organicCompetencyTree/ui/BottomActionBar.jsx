@@ -1,5 +1,6 @@
 import React from 'react';
 import { typeLabels } from '../constants.js';
+import { glassPanel, fontFamily } from './glassStyles.js';
 
 const nodeTypeColors = {
   trunk: '#4CAF50',
@@ -8,7 +9,7 @@ const nodeTypeColors = {
   fruit: '#EF5350',
 };
 
-export default function BottomActionBar({ selectedNode, options, onAction }) {
+export default function BottomActionBar({ selectedNode, options, onAction, sapFlowEnabled, onToggleSapFlow }) {
   const nodeType = selectedNode?.type;
   const nodeColor = nodeTypeColors[nodeType] || '#FFC107';
 
@@ -26,12 +27,10 @@ export default function BottomActionBar({ selectedNode, options, onAction }) {
         gap: 10,
         width: 'min(800px, calc(100vw - 420px))',
         maxWidth: 'calc(100vw - 32px)',
-        padding: '12px 16px 14px',
-        background: 'rgba(13,27,42,0.94)',
-        backdropFilter: 'blur(12px)',
-        border: '1px solid rgba(255,193,7,0.12)',
+        padding: '14px 18px 16px',
+        ...glassPanel,
         borderRadius: 16,
-        boxShadow: '0 12px 32px rgba(0,0,0,0.4)',
+        fontFamily,
       }}
     >
       {/* Info del nodo seleccionado */}
@@ -59,8 +58,9 @@ export default function BottomActionBar({ selectedNode, options, onAction }) {
             <span
               style={{
                 color: 'rgba(255,255,255,0.5)',
-                fontSize: 12,
-                fontWeight: 700,
+                fontSize: 11,
+                fontFamily,
+                fontWeight: 600,
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
                 flexShrink: 0,
@@ -72,7 +72,8 @@ export default function BottomActionBar({ selectedNode, options, onAction }) {
               style={{
                 color: 'rgba(255,255,255,0.95)',
                 fontSize: 13,
-                fontWeight: 700,
+                fontFamily,
+                fontWeight: 600,
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
@@ -87,13 +88,74 @@ export default function BottomActionBar({ selectedNode, options, onAction }) {
             style={{
               color: 'rgba(255,255,255,0.4)',
               fontSize: 12,
-              fontWeight: 600,
+              fontFamily,
+              fontWeight: 500,
               fontStyle: 'italic',
             }}
           >
             Selecciona un nodo para ver acciones
           </span>
         )}
+      </div>
+
+      {/* Controles globales */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 10, width: '100%' }}>
+        <button
+          type="button"
+          onClick={() => onToggleSapFlow?.()}
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 10,
+            padding: '10px 14px',
+            borderRadius: 999,
+            border: '1px solid rgba(255,255,255,0.12)',
+            background: sapFlowEnabled
+              ? 'linear-gradient(180deg, rgba(255,193,7,0.22), rgba(255,193,7,0.06))'
+              : 'linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03))',
+            color: 'rgba(255,255,255,0.92)',
+            fontFamily,
+            fontWeight: 600,
+            fontSize: 13,
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+            touchAction: 'manipulation',
+            WebkitTapHighlightColor: 'transparent',
+          }}
+          title="Activa/desactiva el flujo de savia en las dependencias seleccionadas"
+        >
+          <span
+            style={{
+              width: 26,
+              height: 26,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderRadius: 9,
+              background: sapFlowEnabled ? 'rgba(255,193,7,0.18)' : 'rgba(255,255,255,0.08)',
+              color: sapFlowEnabled ? '#FFD54F' : 'rgba(255,255,255,0.55)',
+              fontSize: 16,
+              lineHeight: 1,
+            }}
+          >
+            💧
+          </span>
+          <span>Flujo de savia</span>
+          <span
+            style={{
+              padding: '4px 10px',
+              borderRadius: 999,
+              background: sapFlowEnabled ? 'rgba(76,175,80,0.18)' : 'rgba(176,190,197,0.14)',
+              border: sapFlowEnabled ? '1px solid rgba(76,175,80,0.25)' : '1px solid rgba(176,190,197,0.18)',
+              color: sapFlowEnabled ? '#A5D6A7' : 'rgba(255,255,255,0.6)',
+              fontWeight: 900,
+              fontSize: 12,
+              letterSpacing: '0.4px',
+            }}
+          >
+            {sapFlowEnabled ? 'ON' : 'OFF'}
+          </span>
+        </button>
       </div>
 
       {/* Barra de acciones - botones grandes para tablet */}
@@ -133,7 +195,8 @@ export default function BottomActionBar({ selectedNode, options, onAction }) {
                   ? 'linear-gradient(180deg, rgba(255,82,82,0.18), rgba(255,82,82,0.06))'
                   : 'linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03))',
                 color: danger ? '#FF8A80' : 'rgba(255,255,255,0.9)',
-                fontWeight: 700,
+                fontFamily,
+                fontWeight: 600,
                 fontSize: 13,
                 cursor: selectedNode ? 'pointer' : 'default',
                 transition: 'all 0.15s ease',

@@ -59,3 +59,34 @@
     filter: none !important;
   }
 }
+
+/* ==========================================================
+   "Flujo de savia" sobre enlaces de ramas (dependencias activas)
+   ========================================================== */
+
+@keyframes sap-flow {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -220;
+  }
+}
+
+.sap-flow {
+  pointer-events: none;
+  opacity: 0;
+  mix-blend-mode: screen;
+}
+
+.sap-flow.sap-active {
+  opacity: 0.62;
+  animation: sap-flow var(--sap-speed, 1.85s) linear infinite;
+  filter: drop-shadow(0 0 2px rgba(255, 213, 79, 0.35));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sap-flow.sap-active {
+    animation: none !important;
+  }
+}

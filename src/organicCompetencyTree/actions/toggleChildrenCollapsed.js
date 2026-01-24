@@ -50,6 +50,16 @@ export function toggleChildrenCollapsedAction({
   // Fast path: just hide/show existing DOM nodes + links (no full redraw).
   const svgEl = svgRef.current;
   if (svgEl && allDescendantIds.length > 0) {
+    const parentSel = d3.select(svgEl).select(`.node-${nodeId}`);
+    const parentDatum = parentSel.empty() ? null : parentSel.datum();
+    const parentX = Number.isFinite(parentDatum?.fx) ? parentDatum.fx : 0;
+    const parentY = Number.isFinite(parentDatum?.fy) ? parentDatum.fy : 0;
+
+    const collapseDur = 420;
+    const expandDur = 520;
+    const collapseEase = d3.easeCubicIn;
+    const expandEase = d3.easeCubicOut;
+
     const hideIds = isCollapsing ? allDescendantIds : hiddenAfterExpandIds;
     const showIds = isCollapsing ? [] : visibleIdsAfterExpand;
 
@@ -69,8 +79,41 @@ export function toggleChildrenCollapsedAction({
           const tid = Number(this.dataset?.targetId);
           return Number.isFinite(tid) && allDescendantSet.has(tid) && !visibleSet.has(tid);
         });
-      hideNodeSel.style('display', 'none');
-      hideLinkSel.style('display', 'none');
+
+      // Smooth collapse: fade + drift toward the parent before hiding.
+      if (Number.isFinite(parentX) && Number.isFinite(parentY)) {
+        hideNodeSel
+          .style('pointer-events', 'none')
+          .interrupt()
+          .transition()
+          .duration(collapseDur)
+          .ease(collapseEase)
+          .style('opacity', 0)
+          .attr('transform', `translate(${parentX}, ${parentY})`)
+          .on('end', function (event, d) {
+            const sel = d3.select(this);
+            sel.style('display', 'none').style('opacity', null).style('pointer-events', null);
+            if (Number.isFinite(d?.fx) && Number.isFinite(d?.fy)) {
+              sel.attr('transform', `translate(${d.fx}, ${d.fy})`);
+            } else {
+              sel.attr('transform', null);
+            }
+          });
+
+        hideLinkSel
+          .style('pointer-events', 'none')
+          .interrupt()
+          .transition()
+          .duration(Math.max(180, Math.round(collapseDur * 0.85)))
+          .ease(collapseEase)
+          .style('opacity', 0)
+          .on('end', function () {
+            d3.select(this).style('display', 'none').style('opacity', null).style('pointer-events', null);
+          });
+      } else {
+        hideNodeSel.style('display', 'none');
+        hideLinkSel.style('display', 'none');
+      }
     }
 
     if (showIds.length > 0) {
@@ -82,8 +125,40 @@ export function toggleChildrenCollapsedAction({
           const tid = Number(this.dataset?.targetId);
           return Number.isFinite(tid) && visibleSet.has(tid);
         });
-      showNodeSel.style('display', null);
-      showLinkSel.style('display', null);
+
+      // Smooth expand: show at parent and ease into their saved positions.
+      if (Number.isFinite(parentX) && Number.isFinite(parentY)) {
+        showNodeSel
+          .interrupt()
+          .style('display', null)
+          .style('pointer-events', 'none')
+          .style('opacity', 0)
+          .attr('transform', `translate(${parentX}, ${parentY})`)
+          .transition()
+          .duration(expandDur)
+          .ease(expandEase)
+          .style('opacity', 1)
+          .attr('transform', (d) => `translate(${d.fx}, ${d.fy})`)
+          .on('end', function () {
+            d3.select(this).style('pointer-events', null).style('opacity', null);
+          });
+
+        showLinkSel
+          .interrupt()
+          .style('display', null)
+          .style('pointer-events', 'none')
+          .style('opacity', 0)
+          .transition()
+          .duration(Math.max(220, Math.round(expandDur * 0.9)))
+          .ease(expandEase)
+          .style('opacity', 1)
+          .on('end', function () {
+            d3.select(this).style('pointer-events', null).style('opacity', null);
+          });
+      } else {
+        showNodeSel.style('display', null);
+        showLinkSel.style('display', null);
+      }
     }
   }
 

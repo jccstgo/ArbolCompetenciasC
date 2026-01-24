@@ -77,8 +77,8 @@ export function attachInteractions({
   
       linksGroup.selectAll('.root-link-deep-shadow, .root-link-shadow, .root-link, .root-link-edge-shadow, .root-link-texture, .root-link-texture-light, .root-link-center-highlight, .root-link-highlight, .root-link-highlight2, .root-link-specular').attr('d', rootPath);
       linksGroup.selectAll('.root-rootlet, .root-rootlet-shadow, .root-rootlet-highlight').attr('d', rootletPath);
-      linksGroup.selectAll('.branch-link-deep-shadow, .branch-link-shadow, .branch-link-base, .branch-link-edge-shadow, .branch-link-texture-dark, .branch-link-texture-light, .branch-link-center-highlight, .branch-link-highlight, .branch-link-highlight2, .branch-link-specular').attr('d', branchPath);
-      linksGroup.selectAll('.branch-twig, .branch-twig-shadow, .branch-twig-highlight').attr('d', branchTwigPath);
+      linksGroup.selectAll('.branch-link-deep-shadow, .branch-link-shadow, .branch-link-base, .branch-link-edge-shadow, .branch-link-texture-dark, .branch-link-texture-light, .branch-link-center-highlight, .branch-link-highlight, .branch-link-highlight2, .branch-link-specular, .branch-sap-flow').attr('d', branchPath);
+      linksGroup.selectAll('.branch-twig, .branch-twig-shadow, .branch-twig-highlight, .twig-sap-flow').attr('d', branchTwigPath);
     })
     .on('end', function (_event, d) {
       d3.select(this).style('cursor', 'grab');

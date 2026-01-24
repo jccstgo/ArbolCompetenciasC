@@ -25,6 +25,8 @@ import RenameModal from './ui/RenameModal.jsx';
 import Stats from './ui/Stats.jsx';
 import TreeHeader from './ui/TreeHeader.jsx';
 import BottomActionBar from './ui/BottomActionBar.jsx';
+import SearchBar from './ui/SearchBar.jsx';
+import { fontFamily } from './ui/glassStyles.js';
 
 // ============================================
 // ORGANIC COMPETENCY TREE v10.0
@@ -43,6 +45,7 @@ export default function OrganicCompetencyTree() {
   const treeDataRef = useRef(null);
   const selectionRef = useRef(createEmptySelection());
   const ambientTimerRef = useRef(null);
+  const sapFlowEnabledRef = useRef(true);
   
   const [treeData, setTreeData] = useState(initialData);
   const [contextMenu, setContextMenu] = useState(null);
@@ -50,6 +53,7 @@ export default function OrganicCompetencyTree() {
   const [nextId, setNextId] = useState(100);
   const [structureVersion, setStructureVersion] = useState(0);
   const [selectedNodeId, setSelectedNodeId] = useState(null);
+  const [sapFlowEnabled, setSapFlowEnabled] = useState(true);
   
   const [renameModal, setRenameModal] = useState({ isOpen: false, nodeId: null, currentName: '', nodeType: '' });
   const [masteryModal, setMasteryModal] = useState({ isOpen: false, nodeId: null, currentMastery: 50, nodeName: '' });
@@ -59,6 +63,13 @@ export default function OrganicCompetencyTree() {
   const [masteryValue, setMasteryValue] = useState(50);
 
   useEffect(() => { treeDataRef.current = treeData; }, [treeData]);
+  useEffect(() => { sapFlowEnabledRef.current = sapFlowEnabled; }, [sapFlowEnabled]);
+
+  useEffect(() => {
+    const svgEl = svgRef.current;
+    if (!svgEl) return;
+    applySelectionStyles({ svgEl, selection: selectionRef.current, nodeConfig, sapFlowEnabled: sapFlowEnabledRef.current });
+  }, [sapFlowEnabled]);
 
   useEffect(() => {
     return () => {
@@ -76,7 +87,7 @@ export default function OrganicCompetencyTree() {
     if (!selectedId) {
       const empty = createEmptySelection();
       selectionRef.current = empty;
-      applySelectionStyles({ svgEl, selection: empty, nodeConfig });
+      applySelectionStyles({ svgEl, selection: empty, nodeConfig, sapFlowEnabled: sapFlowEnabledRef.current });
       setSelectedNodeId(null);
       return;
     }
@@ -84,14 +95,14 @@ export default function OrganicCompetencyTree() {
     if (!isNodeVisible(svgEl, selectedId)) {
       const empty = createEmptySelection();
       selectionRef.current = empty;
-      applySelectionStyles({ svgEl, selection: empty, nodeConfig });
+      applySelectionStyles({ svgEl, selection: empty, nodeConfig, sapFlowEnabled: sapFlowEnabledRef.current });
       setSelectedNodeId(null);
       return;
     }
 
     const selection = computeSelection({ model, selectedId, findNode, getAllChildren });
     selectionRef.current = selection;
-    applySelectionStyles({ svgEl, selection, nodeConfig });
+    applySelectionStyles({ svgEl, selection, nodeConfig, sapFlowEnabled: sapFlowEnabledRef.current });
     setSelectedNodeId(selectedId);
   }, []);
 
@@ -338,10 +349,17 @@ export default function OrganicCompetencyTree() {
   const contextNode = contextMenu ? findNode(treeData, contextMenu.nodeId) : null;
   const contextMenuOptions = contextNode ? getMenuOptions(contextNode) : [];
 
+  // Handle search result selection: center on node and highlight it
+  const handleSearchSelect = useCallback((nodeId) => {
+    centerOnNode(nodeId);
+    applySelectionHighlight(nodeId);
+  }, [centerOnNode, applySelectionHighlight]);
+
   return (
-    <div ref={containerRef} style={{ width: '100vw', height: '100vh', background: '#0d1b2a', position: 'relative', overflow: 'hidden', fontFamily: 'system-ui, sans-serif' }}>
-      
+    <div ref={containerRef} style={{ width: '100vw', height: '100vh', background: '#0d1b2a', position: 'relative', overflow: 'hidden', fontFamily }}>
+
       <TreeHeader />
+      <SearchBar treeData={treeData} onSelectNode={handleSearchSelect} />
       <Legend />
       <Stats treeData={treeData} countNodes={countNodes} />
 
@@ -352,6 +370,8 @@ export default function OrganicCompetencyTree() {
       <BottomActionBar
         selectedNode={selectedNode}
         options={selectedMenuOptions}
+        sapFlowEnabled={sapFlowEnabled}
+        onToggleSapFlow={() => setSapFlowEnabled((v) => !v)}
         onAction={(action, nodeId) => {
           setContextMenu(null);
           handleMenuAction(action, nodeId);

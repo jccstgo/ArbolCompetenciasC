@@ -499,6 +499,58 @@ export function drawLinks({ mainGroup, allLinks, linkFns, isFirstRender }) {
     .attr('data-source-id', d => d.source.data.id)
     .attr('data-target-id', d => d.target.data.id);
 
+  // "Sap flow" overlay: subtle animated dashes that run along the branch paths.
+  // This stays hidden by default and is activated via selection styling (sap-active).
+  linksGroup
+    .selectAll('.branch-sap-flow')
+    .data(branchLinks)
+    .enter()
+    .append('path')
+    .attr('class', 'branch-sap-flow sap-flow link')
+    .attr('d', branchPath)
+    .attr('fill', 'none')
+    .attr('stroke', 'rgba(255, 213, 79, 0.75)')
+    .attr('stroke-width', (d) => Math.max(1.7, Math.min(3.8, branchWidth(d) * 0.22)))
+    .attr('stroke-linecap', 'round')
+    .attr('stroke-dasharray', (d) => {
+      const w = branchWidth(d);
+      const on = Math.max(8, w * 0.42);
+      const off = Math.max(18, w * 1.35);
+      return `${on} ${off}`;
+    })
+    .style('--sap-speed', (d) => {
+      const seed = d?.target?.data?.id ?? 0;
+      const base = 1.55 + (seed % 5) * 0.08;
+      return `${base.toFixed(2)}s`;
+    })
+    .attr('data-source-id', (d) => d.source.data.id)
+    .attr('data-target-id', (d) => d.target.data.id);
+
+  linksGroup
+    .selectAll('.twig-sap-flow')
+    .data(twigLinks)
+    .enter()
+    .append('path')
+    .attr('class', 'twig-sap-flow sap-flow link')
+    .attr('d', branchTwigPath)
+    .attr('fill', 'none')
+    .attr('stroke', 'rgba(255, 235, 170, 0.6)')
+    .attr('stroke-width', (d) => Math.max(1.3, Math.min(3.0, branchWidth(d) * 0.18)))
+    .attr('stroke-linecap', 'round')
+    .attr('stroke-dasharray', (d) => {
+      const w = branchWidth(d);
+      const on = Math.max(6, w * 0.34);
+      const off = Math.max(14, w * 1.15);
+      return `${on} ${off}`;
+    })
+    .style('--sap-speed', (d) => {
+      const seed = (d?.target?.data?.id ?? 0) + 3;
+      const base = 1.35 + (seed % 7) * 0.08;
+      return `${base.toFixed(2)}s`;
+    })
+    .attr('data-source-id', (d) => d.source.data.id)
+    .attr('data-target-id', (d) => d.target.data.id);
+
   if (isFirstRender.current) {
     // Animate deep shadow layer
     linksGroup.selectAll('.branch-link-deep-shadow')

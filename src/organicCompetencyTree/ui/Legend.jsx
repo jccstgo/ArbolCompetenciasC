@@ -1,9 +1,10 @@
 import { typeIcons } from '../constants.js';
+import { glassPanel, fontFamily } from './glassStyles.js';
 
 const legendItems = [
   { type: 'trunk', label: 'Copa – Identidad', color: '#4CAF50', icon: typeIcons.trunk },
-  { type: 'root', label: 'Raíz – Fundamento', color: '#8D6E63', icon: typeIcons.root },
-  { type: 'branch', label: 'Rama – Especialización', color: '#81C784', icon: typeIcons.branch },
+  { type: 'root', label: 'Raiz – Fundamento', color: '#8D6E63', icon: typeIcons.root },
+  { type: 'branch', label: 'Rama – Especializacion', color: '#81C784', icon: typeIcons.branch },
   { type: 'fruit', label: 'Fruto – Competencia', color: '#EF5350', icon: typeIcons.fruit },
 ];
 
@@ -15,20 +16,19 @@ export default function Legend() {
         bottom: 14,
         left: 14,
         zIndex: 10,
-        padding: '12px 13px',
-        background: 'rgba(13,27,42,0.9)',
-        borderRadius: '12px',
-        border: '1px solid rgba(255,193,7,0.15)',
-        backdropFilter: 'blur(8px)',
+        padding: '14px 16px',
+        ...glassPanel,
+        borderRadius: '14px',
       }}
     >
       <div
         style={{
-          fontSize: 'clamp(12px, 0.95vw, 16px)',
-          fontWeight: 900,
-          color: 'rgba(255,255,255,0.6)',
+          fontSize: '11px',
+          fontFamily,
+          fontWeight: 700,
+          color: 'rgba(255,255,255,0.5)',
           letterSpacing: '1.5px',
-          marginBottom: '10px',
+          marginBottom: '12px',
           textTransform: 'uppercase',
         }}
       >
@@ -38,21 +38,21 @@ export default function Legend() {
         <div key={item.type} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
           <div
             style={{
-              width: 20,
-              height: 20,
-              borderRadius: '7px',
-              background: item.color,
+              width: 22,
+              height: 22,
+              borderRadius: '8px',
+              background: `linear-gradient(135deg, ${item.color} 0%, ${item.color}cc 100%)`,
               flex: '0 0 auto',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              border: '2px solid rgba(0,0,0,0.25)',
-              boxShadow: '0 8px 16px rgba(0,0,0,0.18)',
+              border: '2px solid rgba(255,255,255,0.15)',
+              boxShadow: `0 4px 12px ${item.color}40`,
             }}
           >
-            <span style={{ fontSize: '12px', color: '#fff', textShadow: '0 2px 0 rgba(0,0,0,0.45)' }}>{item.icon}</span>
+            <span style={{ fontSize: '11px', color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}>{item.icon}</span>
           </div>
-          <span style={{ fontSize: 'clamp(14px, 1.05vw, 18px)', fontWeight: 800, color: '#E8E8E8', lineHeight: 1.2 }}>
+          <span style={{ fontSize: '13px', fontFamily, fontWeight: 600, color: '#E8E8E8', lineHeight: 1.2 }}>
             {item.label}
           </span>
         </div>

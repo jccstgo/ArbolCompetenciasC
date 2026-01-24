@@ -61,7 +61,7 @@ export const computeSelection = ({ model, selectedId, findNode, getAllChildren }
   return { selectedId, descendants, ancestors };
 };
 
-export const applySelectionStyles = ({ svgEl, selection, nodeConfig }) => {
+export const applySelectionStyles = ({ svgEl, selection, nodeConfig, sapFlowEnabled = true }) => {
   const nodesGroup = d3.select(svgEl).select('.nodes');
   if (nodesGroup.empty()) return;
 
@@ -101,5 +101,26 @@ export const applySelectionStyles = ({ svgEl, selection, nodeConfig }) => {
       ring.attr('stroke', baseStrokeForType(d?.data?.type));
     }
   });
-};
 
+  // Activate "sap flow" on branch links within the selected subtree.
+  const linksGroup = d3.select(svgEl).select('.links');
+  if (!linksGroup.empty()) {
+    const selectedId = selection?.selectedId ?? null;
+    const descendants = selection?.descendants instanceof Set ? selection.descendants : new Set();
+    const isLargeSelection = descendants.size > 90;
+
+    linksGroup.selectAll('.sap-flow').each(function () {
+      const sid = Number(this.dataset?.sourceId);
+      const tid = Number(this.dataset?.targetId);
+
+      const active = !!sapFlowEnabled && !!selectedId && Number.isFinite(sid) && Number.isFinite(tid) && (
+        // For small selections, animate the whole subtree.
+        (!isLargeSelection && descendants.has(sid) && descendants.has(tid)) ||
+        // For huge selections (e.g., selecting trunk), animate only the "first hop" from selected.
+        (isLargeSelection && sid === selectedId && descendants.has(tid))
+      );
+
+      d3.select(this).classed('sap-active', active);
+    });
+  }
+};

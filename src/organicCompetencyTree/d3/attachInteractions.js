@@ -22,6 +22,10 @@ export function attachInteractions({
     const svgEl = svgRef.current;
     if (!svgEl) return [0, 0];
 
+    if (Number.isFinite(dragEvent?.x) && Number.isFinite(dragEvent?.y)) {
+      return [dragEvent.x, dragEvent.y];
+    }
+
     const se = dragEvent?.sourceEvent ?? dragEvent;
     const pt = d3.pointer(se, svgEl);
     if (Number.isFinite(pt?.[0]) && Number.isFinite(pt?.[1])) return pt;
@@ -56,6 +60,8 @@ export function attachInteractions({
   };
   
   const dragBehavior = d3.drag()
+    .container(() => svgRef.current)
+    .touchable(true)
     .filter((event) => {
       // Avoid starting drag during pinch-zoom (multi-touch).
       if (event?.touches) return event.touches.length === 1;
@@ -74,6 +80,11 @@ export function attachInteractions({
       const transform = zoomRef.current || d3.zoomIdentity;
       d.dragStartX = d.fx; d.dragStartY = d.fy;
       const [px, py] = getSvgPixelPoint(event);
+      if (!Number.isFinite(px) || !Number.isFinite(py)) {
+        d.dragReady = false;
+        return;
+      }
+      d.dragReady = true;
       d.mouseStartX = (px - transform.x) / transform.k;
       d.mouseStartY = (py - transform.y) / transform.k;
   
@@ -87,8 +98,10 @@ export function attachInteractions({
       d.subtreeDrag = { subtree, dragStartX: d.fx, dragStartY: d.fy };
     })
     .on('drag', function (event, d) {
+      if (d.dragReady === false) return;
       const transform = zoomRef.current || d3.zoomIdentity;
       const [px, py] = getSvgPixelPoint(event);
+      if (!Number.isFinite(px) || !Number.isFinite(py)) return;
       const mx = (px - transform.x) / transform.k;
       const my = (py - transform.y) / transform.k;
       d.fx = d.dragStartX + (mx - d.mouseStartX);
@@ -122,6 +135,7 @@ export function attachInteractions({
       const baseOpacity = kind ? (kind === 'selected' ? 0.95 : kind === 'desc' ? 0.72 : 0.66) : 0;
       nodeSel.select('.glow-ring').transition().duration(200).attr('opacity', baseOpacity);
       d.subtreeDrag = null;
+      d.dragReady = null;
     });
   
   // Apply drag behavior only to non-trunk nodes (trunk/canopy is fixed).

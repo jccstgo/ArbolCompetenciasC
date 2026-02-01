@@ -52,15 +52,19 @@ export function renderFullScene({
   // Setup zoom behavior.
   const zoomBehavior = d3
     .zoom()
-    // Tablet-friendly: 1-finger is for selecting/dragging nodes, 2-fingers is for pan/zoom.
+    // Keep default touch behavior (1-finger pan + 2-finger pinch), but don't start zoom when touching a node
+    // so dragging a node on tablets doesn't fight with panning.
     .filter((event) => {
       const t = event?.type;
-      if (t === 'wheel') return true; // mouse wheel / trackpad pinch
-      if (t === 'mousedown') return event.button === 0; // left click only
-      if (t && t.startsWith('touch')) {
-        const touches = event.touches;
-        return !!touches && touches.length > 1;
-      }
+      if (t === 'wheel') return true;
+      if (t === 'mousedown') return event.button === 0;
+
+      const touches = event?.touches;
+      if (touches && touches.length > 1) return true; // allow pinch anywhere
+
+      const target = event?.target;
+      if (target?.closest?.('.node')) return false; // 1-finger on node => drag, not pan
+
       return true;
     })
     .scaleExtent([0.25, 3])

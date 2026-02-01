@@ -26,6 +26,7 @@ import Stats from './ui/Stats.jsx';
 import TreeHeader from './ui/TreeHeader.jsx';
 import BottomActionBar from './ui/BottomActionBar.jsx';
 import SearchBar from './ui/SearchBar.jsx';
+import ToolbarMenu, { loadFromLocalStorage, loadFromUrl, STORAGE_KEY } from './ui/ToolbarMenu.jsx';
 import { fontFamily } from './ui/glassStyles.js';
 
 // ============================================
@@ -34,6 +35,22 @@ import { fontFamily } from './ui/glassStyles.js';
 // ============================================
 
 // NOTE: Configuration/data/utilities live in `src/organicCompetencyTree/*`.
+
+// Helper to get initial data from URL, localStorage, or default
+function getInitialTreeData() {
+  // Priority 1: URL parameter (shared link)
+  const urlData = loadFromUrl();
+  if (urlData) {
+    // Clear URL parameter after loading
+    window.history.replaceState({}, '', window.location.pathname);
+    return urlData;
+  }
+  // Priority 2: localStorage
+  const localData = loadFromLocalStorage();
+  if (localData) return localData;
+  // Priority 3: Default data
+  return initialData;
+}
 
 export default function OrganicCompetencyTree() {
   const svgRef = useRef(null);
@@ -46,8 +63,8 @@ export default function OrganicCompetencyTree() {
   const selectionRef = useRef(createEmptySelection());
   const ambientTimerRef = useRef(null);
   const sapFlowEnabledRef = useRef(true);
-  
-  const [treeData, setTreeData] = useState(initialData);
+
+  const [treeData, setTreeData] = useState(getInitialTreeData);
   const [contextMenu, setContextMenu] = useState(null);
   const [dimensions, setDimensions] = useState({ width: 1200, height: 800 });
   const [nextId, setNextId] = useState(100);
@@ -64,6 +81,18 @@ export default function OrganicCompetencyTree() {
 
   useEffect(() => { treeDataRef.current = treeData; }, [treeData]);
   useEffect(() => { sapFlowEnabledRef.current = sapFlowEnabled; }, [sapFlowEnabled]);
+
+  // Auto-save to localStorage when treeData changes
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(treeData));
+      } catch (e) {
+        console.warn('Error auto-saving to localStorage:', e);
+      }
+    }, 1000); // Debounce 1 second
+    return () => clearTimeout(timeoutId);
+  }, [treeData]);
 
   useEffect(() => {
     const svgEl = svgRef.current;
@@ -355,10 +384,28 @@ export default function OrganicCompetencyTree() {
     applySelectionHighlight(nodeId);
   }, [centerOnNode, applySelectionHighlight]);
 
+  // Handle import from file
+  const handleImport = useCallback((importedData) => {
+    setTreeData(importedData);
+    setStructureVersion((v) => v + 1);
+    applySelectionHighlight(null);
+    // Find max ID in imported data to set nextId
+    const findMaxId = (node) => {
+      let max = node.id || 0;
+      const children = [...(node.children || []), ...(node._children || [])];
+      for (const child of children) {
+        max = Math.max(max, findMaxId(child));
+      }
+      return max;
+    };
+    setNextId(findMaxId(importedData) + 1);
+  }, [applySelectionHighlight]);
+
   return (
     <div ref={containerRef} style={{ width: '100vw', height: '100vh', background: '#0d1b2a', position: 'relative', overflow: 'hidden', fontFamily }}>
 
       <TreeHeader />
+      <ToolbarMenu treeData={treeData} onImport={handleImport} svgRef={svgRef} />
       <SearchBar treeData={treeData} onSelectNode={handleSearchSelect} />
       <Legend />
       <Stats treeData={treeData} countNodes={countNodes} />

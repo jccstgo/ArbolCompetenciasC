@@ -18,6 +18,27 @@ export function attachInteractions({
 }) {
   const { rootPath, rootletPath, branchPath, branchTwigPath } = linkFns;
 
+  const getSvgPixelPoint = (dragEvent) => {
+    const svgEl = svgRef.current;
+    if (!svgEl) return [0, 0];
+
+    const se = dragEvent?.sourceEvent ?? dragEvent;
+    const pt = d3.pointer(se, svgEl);
+    if (Number.isFinite(pt?.[0]) && Number.isFinite(pt?.[1])) return pt;
+
+    const rect = svgEl.getBoundingClientRect();
+    const t = se?.touches?.[0] || se?.changedTouches?.[0];
+    if (t && Number.isFinite(t.clientX) && Number.isFinite(t.clientY)) {
+      return [t.clientX - rect.left, t.clientY - rect.top];
+    }
+
+    if (Number.isFinite(se?.clientX) && Number.isFinite(se?.clientY)) {
+      return [se.clientX - rect.left, se.clientY - rect.top];
+    }
+
+    return [0, 0];
+  };
+
   // Drag
   const collectSubtreeIdsFromModel = (nodeId) => {
     const model = treeDataRef?.current || treeData;
@@ -42,7 +63,7 @@ export function attachInteractions({
       d3.select(this).select('.glow-ring').transition().duration(150).attr('opacity', 0.6);
       const transform = zoomRef.current || d3.zoomIdentity;
       d.dragStartX = d.fx; d.dragStartY = d.fy;
-      const [px, py] = d3.pointer(event.sourceEvent, svgRef.current);
+      const [px, py] = getSvgPixelPoint(event);
       d.mouseStartX = (px - transform.x) / transform.k;
       d.mouseStartY = (py - transform.y) / transform.k;
   
@@ -57,7 +78,7 @@ export function attachInteractions({
     })
     .on('drag', function (event, d) {
       const transform = zoomRef.current || d3.zoomIdentity;
-      const [px, py] = d3.pointer(event.sourceEvent, svgRef.current);
+      const [px, py] = getSvgPixelPoint(event);
       const mx = (px - transform.x) / transform.k;
       const my = (py - transform.y) / transform.k;
       d.fx = d.dragStartX + (mx - d.mouseStartX);

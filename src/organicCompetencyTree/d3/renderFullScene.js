@@ -52,6 +52,17 @@ export function renderFullScene({
   // Setup zoom behavior.
   const zoomBehavior = d3
     .zoom()
+    // Tablet-friendly: 1-finger is for selecting/dragging nodes, 2-fingers is for pan/zoom.
+    .filter((event) => {
+      const t = event?.type;
+      if (t === 'wheel') return true; // mouse wheel / trackpad pinch
+      if (t === 'mousedown') return event.button === 0; // left click only
+      if (t && t.startsWith('touch')) {
+        const touches = event.touches;
+        return !!touches && touches.length > 1;
+      }
+      return true;
+    })
     .scaleExtent([0.25, 3])
     .on('zoom', (event) => {
       zoomRef.current = event.transform;

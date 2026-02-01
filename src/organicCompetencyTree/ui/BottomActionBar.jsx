@@ -9,9 +9,10 @@ const nodeTypeColors = {
   fruit: '#EF5350',
 };
 
-export default function BottomActionBar({ selectedNode, options, onAction, sapFlowEnabled, onToggleSapFlow }) {
+export default function BottomActionBar({ selectedNode, options, onAction, sapFlowEnabled, onToggleSapFlow, widthPx }) {
   const nodeType = selectedNode?.type;
   const nodeColor = nodeTypeColors[nodeType] || '#FFC107';
+  const barWidth = Number.isFinite(widthPx) ? widthPx : undefined;
 
   return (
     <div
@@ -26,8 +27,8 @@ export default function BottomActionBar({ selectedNode, options, onAction, sapFl
         flexDirection: 'column',
         alignItems: 'center',
         gap: 10,
-        width: 'min(800px, calc(100vw - 420px))',
-        maxWidth: 'calc(100vw - 32px)',
+        width: barWidth || 'min(820px, calc(100vw - 420px))',
+        maxWidth: barWidth || 'calc(100vw - 32px)',
         padding: '14px 18px 16px',
         ...glassPanel,
         borderRadius: 16,

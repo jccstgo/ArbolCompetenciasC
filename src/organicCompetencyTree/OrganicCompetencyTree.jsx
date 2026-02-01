@@ -71,6 +71,7 @@ export default function OrganicCompetencyTree() {
   const [structureVersion, setStructureVersion] = useState(0);
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [sapFlowEnabled, setSapFlowEnabled] = useState(true);
+  const [actionBarWidthPx, setActionBarWidthPx] = useState(null);
   
   const [renameModal, setRenameModal] = useState({ isOpen: false, nodeId: null, currentName: '', nodeType: '' });
   const [masteryModal, setMasteryModal] = useState({ isOpen: false, nodeId: null, currentMastery: 50, nodeName: '' });
@@ -144,6 +145,35 @@ export default function OrganicCompetencyTree() {
     window.addEventListener('resize', updateDimensions);
     return () => window.removeEventListener('resize', updateDimensions);
   }, []);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const legend = container.querySelector('.legend-panel');
+    const stats = container.querySelector('.stats-panel');
+    if (!legend || !stats) {
+      setActionBarWidthPx(null);
+      return;
+    }
+
+    const c = container.getBoundingClientRect();
+    const l = legend.getBoundingClientRect();
+    const s = stats.getBoundingClientRect();
+
+    // Available horizontal space between legend (left) and stats (right).
+    const leftEdge = l.right - c.left;
+    const rightEdge = s.left - c.left;
+    const gap = rightEdge - leftEdge;
+
+    // Keep a safe margin so it doesn't visually touch the side panels.
+    const margin = 16;
+    const maxByGap = gap - margin * 2;
+    const maxByViewport = dimensions.width - 32;
+
+    const next = Math.max(320, Math.min(900, maxByGap, maxByViewport));
+    setActionBarWidthPx(Number.isFinite(next) ? next : null);
+  }, [dimensions.width, dimensions.height]);
 
   useEffect(() => {
     const handleClick = (e) => { if (!e.target.closest('.context-menu')) setContextMenu(null); };
@@ -424,6 +454,7 @@ export default function OrganicCompetencyTree() {
         options={selectedMenuOptions}
         sapFlowEnabled={sapFlowEnabled}
         onToggleSapFlow={() => setSapFlowEnabled((v) => !v)}
+        widthPx={actionBarWidthPx}
         onAction={(action, nodeId) => {
           setContextMenu(null);
           handleMenuAction(action, nodeId);

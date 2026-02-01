@@ -55,6 +55,16 @@ export function renderFullScene({
     // Keep default touch behavior (1-finger pan + 2-finger pinch), but don't start zoom when touching a node
     // so dragging a node on tablets doesn't fight with panning.
     .filter((event) => {
+      const isWithinNode = (targetEl) => {
+        let el = targetEl;
+        const svgEl = svgRef.current;
+        while (el && el !== svgEl) {
+          if (el.classList?.contains?.('node')) return true;
+          el = el.parentNode;
+        }
+        return false;
+      };
+
       const t = event?.type;
       if (t === 'wheel') return true;
       if (t === 'mousedown') return event.button === 0;
@@ -63,7 +73,7 @@ export function renderFullScene({
       if (touches && touches.length > 1) return true; // allow pinch anywhere
 
       const target = event?.target;
-      if (target?.closest?.('.node')) return false; // 1-finger on node => drag, not pan
+      if (isWithinNode(target)) return false; // 1-finger on node => drag, not pan
 
       return true;
     })

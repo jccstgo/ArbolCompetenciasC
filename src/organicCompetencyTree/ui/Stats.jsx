@@ -15,6 +15,7 @@ export default function Stats({ treeData, countNodes }) {
         bottom: 14,
         right: 14,
         zIndex: 10,
+        pointerEvents: 'none',
         padding: '14px 16px',
         ...glassPanel,
         borderRadius: '14px',

@@ -23,6 +23,9 @@ export default function BottomActionBar({ selectedNode, options, onAction, sapFl
         bottom: 14,
         transform: 'translateX(-50%)',
         zIndex: 11,
+        // Allow the diagram to stay draggable even if it's visible behind this bar.
+        // We re-enable pointer events only on the actual buttons below.
+        pointerEvents: 'none',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -101,7 +104,7 @@ export default function BottomActionBar({ selectedNode, options, onAction, sapFl
       </div>
 
       {/* Controles globales */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 10, width: '100%' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 10, width: '100%', pointerEvents: 'auto' }}>
         <button
           type="button"
           onClick={() => onToggleSapFlow?.()}
@@ -168,6 +171,7 @@ export default function BottomActionBar({ selectedNode, options, onAction, sapFl
           justifyContent: 'center',
           gap: 8,
           width: '100%',
+          pointerEvents: 'auto',
         }}
       >
         {(options || []).map((opt) => {

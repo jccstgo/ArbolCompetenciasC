@@ -17,6 +17,7 @@ export default function Legend() {
         bottom: 14,
         left: 14,
         zIndex: 10,
+        pointerEvents: 'none',
         padding: '14px 16px',
         ...glassPanel,
         borderRadius: '14px',

@@ -56,9 +56,17 @@ export function attachInteractions({
   };
   
   const dragBehavior = d3.drag()
+    .filter((event) => {
+      // Avoid starting drag during pinch-zoom (multi-touch).
+      if (event?.touches) return event.touches.length === 1;
+      // Keep d3's default mouse filter behavior (only primary button, no ctrl).
+      return !event?.ctrlKey && !event?.button;
+    })
     .on('start', function (event, d) {
       event.sourceEvent?.stopPropagation?.();
       event.sourceEvent?.preventDefault?.();
+      setContextMenu(null);
+      applySelectionHighlight(d?.data?.id);
       d3.select(this).raise().style('cursor', 'grabbing');
       d3.select(this).select('.glow-ring').transition().duration(150).attr('opacity', 0.6);
       const transform = zoomRef.current || d3.zoomIdentity;

@@ -83,17 +83,45 @@ export default function OrganicCompetencyTree() {
   useEffect(() => { treeDataRef.current = treeData; }, [treeData]);
   useEffect(() => { sapFlowEnabledRef.current = sapFlowEnabled; }, [sapFlowEnabled]);
 
+  const buildTreeSnapshot = useCallback(() => {
+    const snapshot = deepClone(treeData);
+
+    if (!svgRef.current) return snapshot;
+
+    const posById = new Map();
+    d3.select(svgRef.current)
+      .selectAll('.nodes .node')
+      .each(function (d) {
+        const id = d?.data?.id;
+        if (id == null) return;
+        if (Number.isFinite(d.fx) && Number.isFinite(d.fy)) {
+          posById.set(id, { x: d.fx, y: d.fy });
+        }
+      });
+
+    const applyPos = (node) => {
+      if (!node) return;
+      const pos = posById.get(node.id);
+      if (pos) node.pos = pos;
+      if (Array.isArray(node.children)) node.children.forEach(applyPos);
+      if (Array.isArray(node._children)) node._children.forEach(applyPos);
+    };
+
+    applyPos(snapshot);
+    return snapshot;
+  }, [treeData]);
+
   // Auto-save to localStorage when treeData changes
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(treeData));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(buildTreeSnapshot()));
       } catch (e) {
         console.warn('Error auto-saving to localStorage:', e);
       }
     }, 1000); // Debounce 1 second
     return () => clearTimeout(timeoutId);
-  }, [treeData]);
+  }, [treeData, buildTreeSnapshot]);
 
   useEffect(() => {
     const svgEl = svgRef.current;

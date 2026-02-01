@@ -3,6 +3,9 @@ import { nodeConfig } from '../constants.js';
 import { generateLeafPositions } from '../generateLeafPositions.js';
 
 export function computeTreeGeometry({ treeData, width, height, centerX, groundY }) {
+  const hasPos = (p) => p && Number.isFinite(p.x) && Number.isFinite(p.y);
+  const getPos = (data) => (hasPos(data?.pos) ? data.pos : null);
+
   // Process tree data
   const rootsData = { ...treeData, children: treeData.children?.filter(c => c.type === 'root') || [] };
   const branchesData = { ...treeData, children: treeData.children?.filter(c => c.type === 'branch') || [] };
@@ -17,16 +20,23 @@ export function computeTreeGeometry({ treeData, width, height, centerX, groundY 
   rootLayout(rootHierarchy);
   const rootNodes = rootHierarchy.descendants().slice(1);
   rootNodes.forEach(d => {
-    const offsetX = d.x - width * 0.175;
-    d.fx = centerX + offsetX * 0.85 + Math.sin(d.data.id * 1.3) * 20;
-    d.fy = groundY + 50 + d.depth * 65 + Math.cos(d.data.id * 0.9) * 12;
+    const saved = getPos(d.data);
+    if (saved) {
+      d.fx = saved.x;
+      d.fy = saved.y;
+    } else {
+      const offsetX = d.x - width * 0.175;
+      d.fx = centerX + offsetX * 0.85 + Math.sin(d.data.id * 1.3) * 20;
+      d.fy = groundY + 50 + d.depth * 65 + Math.cos(d.data.id * 0.9) * 12;
+    }
     d.leaves = [];
   });
   
+  const trunkPos = getPos(treeData);
   const trunkNode = {
     data: treeData,
-    fx: centerX,
-    fy: groundY - 175, // Positioned higher to reveal more trunk taper
+    fx: trunkPos ? trunkPos.x : centerX,
+    fy: trunkPos ? trunkPos.y : groundY - 175, // Positioned higher to reveal more trunk taper
     depth: 0,
     leaves: generateLeafPositions('trunk', treeData.id)
   };
@@ -85,8 +95,14 @@ export function computeTreeGeometry({ treeData, width, height, centerX, groundY 
   
   // Place branches using the planar layout (no random jitter).
   branchNodes.forEach((d) => {
-    d.fx = trunkNode.fx + d.x;
-    d.fy = trunkNode.fy - d.y;
+    const saved = getPos(d.data);
+    if (saved) {
+      d.fx = saved.x;
+      d.fy = saved.y;
+    } else {
+      d.fx = trunkNode.fx + d.x;
+      d.fy = trunkNode.fy - d.y;
+    }
     d.leaves = generateLeafPositions('branch', d.data.id);
     placed.push({ fx: d.fx, fy: d.fy, data: d.data });
   });
@@ -101,13 +117,18 @@ export function computeTreeGeometry({ treeData, width, height, centerX, groundY 
     const mid = (count - 1) / 2;
   
     fruits.forEach((fruit, i) => {
-      const angle = Math.PI / 2 + (i - mid) * 0.32;
-      const baseR = 90 + Math.min(40, count * 6);
-      const pref = {
-        x: b.fx + Math.cos(angle) * baseR,
-        y: b.fy + Math.sin(angle) * baseR,
-      };
-      const pos = findNonOverlapping(pref, 'fruit', +1);
+      const saved = getPos(fruit);
+      const pos = saved
+        ? { x: saved.x, y: saved.y }
+        : (() => {
+          const angle = Math.PI / 2 + (i - mid) * 0.32;
+          const baseR = 90 + Math.min(40, count * 6);
+          const pref = {
+            x: b.fx + Math.cos(angle) * baseR,
+            y: b.fy + Math.sin(angle) * baseR,
+          };
+          return findNonOverlapping(pref, 'fruit', +1);
+        })();
   
       const fn = {
         data: fruit,

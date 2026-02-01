@@ -13,22 +13,6 @@ export function drawNodes({ mainGroup, allNodes, isFirstRender }) {
     .attr('transform', d => `translate(${d.fx}, ${d.fy})`)
     .style('cursor', d => d.data.type === 'trunk' ? 'default' : 'grab');
 
-  // Large invisible hit-area so taps/drags work anywhere on the node (Safari/iPad friendly).
-  nodeSelection.append('circle')
-    .attr('class', 'node-hit-area')
-    .attr('cx', 0)
-    .attr('cy', (d) => (d.data.type === 'trunk' ? -65 : d.data.type === 'fruit' ? -8 : 0))
-    .attr('r', (d) => {
-      if (d.data.type === 'trunk') return 140;
-      if (d.data.type === 'root') return nodeConfig.root.radius * 2.7;
-      if (d.data.type === 'branch') return nodeConfig.branch.radius * 3.0;
-      if (d.data.type === 'fruit') return nodeConfig.fruit.radius * 3.4;
-      return 44;
-    })
-    // Use an almost-transparent fill (not fully 0) for more reliable touch hit-testing on Safari.
-    .attr('fill', 'rgba(0,0,0,0.001)')
-    .style('pointer-events', 'all');
-  
   // Foliage (inside node group)
   nodeSelection.each(function(d) {
     const nodeGroup = d3.select(this);
@@ -651,6 +635,23 @@ export function drawNodes({ mainGroup, allNodes, isFirstRender }) {
   } else {
     masteryBadges.attr('opacity', 1);
   }
+
+  // Large invisible hit-area so taps/drags work anywhere on the node (Safari/iPad friendly).
+  // Add it last so it sits above all node art and reliably receives touch events.
+  nodeSelection.append('circle')
+    .attr('class', 'node-hit-area')
+    .attr('cx', 0)
+    .attr('cy', (d) => (d.data.type === 'trunk' ? -65 : d.data.type === 'fruit' ? -8 : 0))
+    .attr('r', (d) => {
+      if (d.data.type === 'trunk') return 140;
+      if (d.data.type === 'root') return nodeConfig.root.radius * 2.7;
+      if (d.data.type === 'branch') return nodeConfig.branch.radius * 3.0;
+      if (d.data.type === 'fruit') return nodeConfig.fruit.radius * 3.4;
+      return 44;
+    })
+    // Use an almost-transparent fill (not fully 0) for more reliable touch hit-testing on Safari.
+    .attr('fill', 'rgba(0,0,0,0.001)')
+    .style('pointer-events', 'all');
   
   return { nodesGroup, nodeSelection };
 }

@@ -67,8 +67,10 @@ export function attachInteractions({
       event.sourceEvent?.preventDefault?.();
       setContextMenu(null);
       applySelectionHighlight(d?.data?.id);
-      d3.select(this).raise().style('cursor', 'grabbing');
-      d3.select(this).select('.glow-ring').transition().duration(150).attr('opacity', 0.6);
+      const nodeEl = this?.closest?.('.node') || this?.parentNode;
+      const nodeSel = nodeEl ? d3.select(nodeEl) : d3.select(this);
+      nodeSel.raise().style('cursor', 'grabbing');
+      nodeSel.select('.glow-ring').transition().duration(150).attr('opacity', 0.6);
       const transform = zoomRef.current || d3.zoomIdentity;
       d.dragStartX = d.fx; d.dragStartY = d.fy;
       const [px, py] = getSvgPixelPoint(event);
@@ -95,15 +97,17 @@ export function attachInteractions({
       const deltaX = d.subtreeDrag ? d.fx - d.subtreeDrag.dragStartX : 0;
       const deltaY = d.subtreeDrag ? d.fy - d.subtreeDrag.dragStartY : 0;
   
-      if (d.subtreeDrag?.subtree?.length) {
-        for (const item of d.subtreeDrag.subtree) {
-          item.d.fx = item.startFx + deltaX;
-          item.d.fy = item.startFy + deltaY;
-          d3.select(item.el).attr('transform', `translate(${item.d.fx}, ${item.d.fy})`);
-        }
-      } else {
-        d3.select(this).attr('transform', `translate(${d.fx}, ${d.fy})`);
-      }
+       if (d.subtreeDrag?.subtree?.length) {
+         for (const item of d.subtreeDrag.subtree) {
+           item.d.fx = item.startFx + deltaX;
+           item.d.fy = item.startFy + deltaY;
+           d3.select(item.el).attr('transform', `translate(${item.d.fx}, ${item.d.fy})`);
+         }
+       } else {
+        const nodeEl = this?.closest?.('.node') || this?.parentNode;
+        const nodeSel = nodeEl ? d3.select(nodeEl) : d3.select(this);
+        nodeSel.attr('transform', `translate(${d.fx}, ${d.fy})`);
+       }
   
       linksGroup.selectAll('.root-link-deep-shadow, .root-link-shadow, .root-link, .root-link-edge-shadow, .root-link-texture, .root-link-texture-light, .root-link-center-highlight, .root-link-highlight, .root-link-highlight2, .root-link-specular').attr('d', rootPath);
       linksGroup.selectAll('.root-rootlet, .root-rootlet-shadow, .root-rootlet-highlight').attr('d', rootletPath);
@@ -111,18 +115,24 @@ export function attachInteractions({
       linksGroup.selectAll('.branch-twig, .branch-twig-shadow, .branch-twig-highlight, .twig-sap-flow').attr('d', branchTwigPath);
     })
     .on('end', function (_event, d) {
-      d3.select(this).style('cursor', 'grab');
+      const nodeEl = this?.closest?.('.node') || this?.parentNode;
+      const nodeSel = nodeEl ? d3.select(nodeEl) : d3.select(this);
+      nodeSel.style('cursor', 'grab');
       const kind = getSelectionKindForId(d?.data?.id);
       const baseOpacity = kind ? (kind === 'selected' ? 0.95 : kind === 'desc' ? 0.72 : 0.66) : 0;
-      d3.select(this).select('.glow-ring').transition().duration(200).attr('opacity', baseOpacity);
+      nodeSel.select('.glow-ring').transition().duration(200).attr('opacity', baseOpacity);
       d.subtreeDrag = null;
     });
   
-  // Apply drag behavior only to non-trunk nodes (trunk/canopy is fixed)
-  nodeSelection.filter(d => d.data.type !== 'trunk').call(dragBehavior);
-  
-  // Set cursor style for trunk to indicate it's not draggable
-  nodeSelection.filter(d => d.data.type === 'trunk').style('cursor', 'default');
+  // Apply drag behavior only to non-trunk nodes (trunk/canopy is fixed).
+  // Bind drag to the `.node-hit-area` element (not the `<g>`) for better iPad/Safari touch behavior.
+  nodeSelection
+    .filter((d) => d.data.type !== 'trunk')
+    .selectAll('.node-hit-area')
+    .call(dragBehavior);
+
+  // Set cursor style for trunk to indicate it's not draggable.
+  nodeSelection.filter((d) => d.data.type === 'trunk').style('cursor', 'default');
   
   // Hover & context
   nodeSelection

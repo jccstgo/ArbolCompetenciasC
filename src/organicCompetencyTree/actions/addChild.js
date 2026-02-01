@@ -344,10 +344,36 @@ export function addChildIncremental({
       .attr('data-source-id', parentId)
       .attr('data-target-id', childId);
 
+    // "Sap flow" overlay: hidden by default and activated by selection styling.
+    linksGroup
+      .append('path')
+      .datum(linkDatum)
+      .attr('class', 'branch-sap-flow sap-flow link')
+      .attr('d', branchPath)
+      .attr('fill', 'none')
+      .attr('stroke', 'rgba(255, 213, 79, 0.75)')
+      .attr('stroke-width', (d) => Math.max(1.7, Math.min(3.8, branchWidth(d) * 0.22)))
+      .attr('stroke-linecap', 'round')
+      .attr('stroke-dasharray', (d) => {
+        const w = branchWidth(d);
+        const on = Math.max(8, w * 0.42);
+        const off = Math.max(18, w * 1.35);
+        return `${on} ${off}`;
+      })
+      .style('--sap-speed', (d) => {
+        const seed = d?.target?.data?.id ?? 0;
+        const base = 1.55 + (seed % 5) * 0.08;
+        return `${base.toFixed(2)}s`;
+      })
+      .attr('data-source-id', parentId)
+      .attr('data-target-id', childId);
+
     if (parentDatum?.data?.type === 'branch' && childType === 'branch' && linkFnsRef.current.branchTwigPath) {
+      const twigDatum = { ...linkDatum, twigSide: childId % 2 === 0 ? 1 : -1 };
+
       linksGroup
         .append('path')
-        .datum({ ...linkDatum, twigSide: childId % 2 === 0 ? 1 : -1 })
+        .datum(twigDatum)
         .attr('class', 'branch-twig link')
         .attr('d', linkFnsRef.current.branchTwigPath)
         .attr('fill', 'none')
@@ -355,6 +381,29 @@ export function addChildIncremental({
         .attr('stroke-opacity', 0.7)
         .attr('stroke-width', Math.max(1.8, baseW * 0.28))
         .attr('stroke-linecap', 'round')
+        .attr('data-source-id', parentId)
+        .attr('data-target-id', childId);
+
+      linksGroup
+        .append('path')
+        .datum(twigDatum)
+        .attr('class', 'twig-sap-flow sap-flow link')
+        .attr('d', linkFnsRef.current.branchTwigPath)
+        .attr('fill', 'none')
+        .attr('stroke', 'rgba(255, 235, 170, 0.6)')
+        .attr('stroke-width', (d) => Math.max(1.3, Math.min(3.0, branchWidth(d) * 0.18)))
+        .attr('stroke-linecap', 'round')
+        .attr('stroke-dasharray', (d) => {
+          const w = branchWidth(d);
+          const on = Math.max(6, w * 0.34);
+          const off = Math.max(14, w * 1.15);
+          return `${on} ${off}`;
+        })
+        .style('--sap-speed', (d) => {
+          const seed = (d?.target?.data?.id ?? 0) + 3;
+          const base = 1.35 + (seed % 7) * 0.08;
+          return `${base.toFixed(2)}s`;
+        })
         .attr('data-source-id', parentId)
         .attr('data-target-id', childId);
     }
@@ -372,9 +421,16 @@ export function addChildIncremental({
       siblings.forEach((l, i) => { l.portOffset = (i - mid) * step; });
 
       linksGroup
-        .selectAll('.branch-link')
+        .selectAll('.branch-link, .branch-sap-flow')
         .filter(function () { return Number(this.dataset?.sourceId) === parentId; })
         .attr('d', branchPath);
+
+      if (branchTwigPath) {
+        linksGroup
+          .selectAll('.branch-twig, .twig-sap-flow')
+          .filter(function () { return Number(this.dataset?.sourceId) === parentId; })
+          .attr('d', branchTwigPath);
+      }
     } catch {
       // noop
     }
@@ -383,7 +439,7 @@ export function addChildIncremental({
   const nodeGroup = nodesGroup
     .append('g')
     .datum(nodeDatum)
-    .attr('class', `node node-${childId}`)
+    .attr('class', `node node-${childId} node-type-${childType}`)
     .attr('transform', `translate(${fx}, ${fy})`)
     .style('cursor', 'grab')
     .style('display', null);
@@ -391,16 +447,29 @@ export function addChildIncremental({
   // Foliage
   if (nodeDatum.leaves?.length) {
     const foliageGroup = nodeGroup.append('g').attr('class', 'foliage');
-    nodeDatum.leaves.forEach((leaf) => {
+    nodeDatum.leaves.forEach((leaf, i) => {
+      const seed = ((childId ?? 0) * 9973 + i * 1013) % 1000;
+      const swayRot = 5.0 + (seed % 9) * 0.58; // ~5.0deg..10.2deg
+      const swayX = ((seed % 7) - 3) * 0.75; // ~-2.25px..2.25px
+      const swayY = -1.65 + ((seed % 5) - 2) * 0.36; // ~-2.37px..-0.93px
+      const dur = 3.6 + (seed % 100) / 100 * 2.1; // 3.6s..5.7s
+      const delay = ((leaf.delay ?? 0) + i * 60) / 1000;
+
       foliageGroup
         .append('ellipse')
+        .attr('class', 'breeze-leaf')
         .attr('cx', leaf.x)
         .attr('cy', leaf.y)
         .attr('rx', 0)
         .attr('ry', 0)
         .attr('opacity', 0)
         .attr('fill', leaf.color)
-        .attr('transform', `rotate(${leaf.rotation} ${leaf.x} ${leaf.y})`)
+        .style('--leaf-rot', `${leaf.rotation}deg`)
+        .style('--sway-rot', `${swayRot}deg`)
+        .style('--sway-x', `${swayX}px`)
+        .style('--sway-y', `${swayY}px`)
+        .style('--breeze-duration', `${dur.toFixed(2)}s`)
+        .style('--breeze-delay', `${delay.toFixed(2)}s`)
         .transition()
         .duration(450)
         .attr('rx', leaf.rx)
@@ -418,7 +487,8 @@ export function addChildIncremental({
     .attr('fill', 'none')
     .attr('stroke', childType === 'fruit' ? '#FFC107' : childType === 'root' ? '#8D6E63' : '#81C784')
     .attr('stroke-width', 3)
-    .attr('opacity', 0);
+    .attr('opacity', 0)
+    .style('pointer-events', 'none');
 
   // Shape per type
   if (childType === 'root') {
@@ -600,6 +670,23 @@ export function addChildIncremental({
     }
   }
 
+  // Large invisible hit-area so taps/drags work anywhere on the node (Safari/iPad friendly).
+  // Add it last so it sits above all node art and reliably receives touch events.
+  const hitArea = nodeGroup
+    .append('circle')
+    .attr('class', 'node-hit-area')
+    .attr('cx', 0)
+    .attr('cy', childType === 'fruit' ? -8 : 0)
+    .attr('r', () => {
+      if (childType === 'root') return nodeConfig.root.radius * 2.7;
+      if (childType === 'branch') return nodeConfig.branch.radius * 3.0;
+      if (childType === 'fruit') return nodeConfig.fruit.radius * 3.4;
+      return 44;
+    })
+    .attr('fill', 'rgba(0,0,0,0.001)')
+    .style('pointer-events', 'all')
+    .style('cursor', 'grab');
+
   // Interactions for the newly added node
   const collectSubtreeIdsFromModel = (nodeId) => {
     const model = treeDataRef?.current || treeData;
@@ -616,16 +703,45 @@ export function addChildIncremental({
     return ids;
   };
 
+  const getSvgPixelPoint = (dragEvent) => {
+    const se = dragEvent?.sourceEvent ?? dragEvent;
+    const pt = d3.pointer(se, svgEl);
+    if (Number.isFinite(pt?.[0]) && Number.isFinite(pt?.[1])) return pt;
+
+    const rect = svgEl.getBoundingClientRect();
+    const t = se?.touches?.[0] || se?.changedTouches?.[0];
+    if (t && Number.isFinite(t.clientX) && Number.isFinite(t.clientY)) {
+      return [t.clientX - rect.left, t.clientY - rect.top];
+    }
+
+    if (Number.isFinite(se?.clientX) && Number.isFinite(se?.clientY)) {
+      return [se.clientX - rect.left, se.clientY - rect.top];
+    }
+
+    return [0, 0];
+  };
+
   const dragBehavior = d3.drag()
+    .filter((event) => {
+      // Avoid starting drag during pinch-zoom (multi-touch).
+      if (event?.touches) return event.touches.length === 1;
+      // Keep d3's default mouse filter behavior (only primary button, no ctrl).
+      return !event?.ctrlKey && !event?.button;
+    })
     .on('start', function (event, d) {
-      event.sourceEvent.stopPropagation();
-      d3.select(this).raise().style('cursor', 'grabbing');
-      d3.select(this).select('.glow-ring').transition().duration(120).attr('opacity', 0.85);
+      event.sourceEvent?.stopPropagation?.();
+      event.sourceEvent?.preventDefault?.();
+      setContextMenu(null);
+      applySelectionHighlight(d?.data?.id);
+      const nodeEl = this?.closest?.('.node') || this?.parentNode;
+      const nodeSel = nodeEl ? d3.select(nodeEl) : d3.select(this);
+      nodeSel.raise().style('cursor', 'grabbing');
+      nodeSel.select('.glow-ring').transition().duration(150).attr('opacity', 0.6);
       const transform = zoomRef.current || d3.zoomIdentity;
       d.dragStartX = d.fx; d.dragStartY = d.fy;
-      const rect = svgEl.getBoundingClientRect();
-      d.mouseStartX = (event.sourceEvent.clientX - rect.left - transform.x) / transform.k;
-      d.mouseStartY = (event.sourceEvent.clientY - rect.top - transform.y) / transform.k;
+      const [px, py] = getSvgPixelPoint(event);
+      d.mouseStartX = (px - transform.x) / transform.k;
+      d.mouseStartY = (py - transform.y) / transform.k;
 
       const subtreeIds = collectSubtreeIdsFromModel(d.data.id);
       const nodesSel = nodesGroup.selectAll(subtreeIds.map((id) => `.node-${id}`).join(', '));
@@ -637,9 +753,9 @@ export function addChildIncremental({
     })
     .on('drag', function (event, d) {
       const transform = zoomRef.current || d3.zoomIdentity;
-      const rect = svgEl.getBoundingClientRect();
-      const mx = (event.sourceEvent.clientX - rect.left - transform.x) / transform.k;
-      const my = (event.sourceEvent.clientY - rect.top - transform.y) / transform.k;
+      const [px, py] = getSvgPixelPoint(event);
+      const mx = (px - transform.x) / transform.k;
+      const my = (py - transform.y) / transform.k;
       d.fx = d.dragStartX + (mx - d.mouseStartX);
       d.fy = d.dragStartY + (my - d.mouseStartY);
 
@@ -653,24 +769,29 @@ export function addChildIncremental({
           d3.select(item.el).attr('transform', `translate(${item.d.fx}, ${item.d.fy})`);
         }
       } else {
-        d3.select(this).attr('transform', `translate(${d.fx}, ${d.fy})`);
+        const nodeEl = this?.closest?.('.node') || this?.parentNode;
+        const nodeSel = nodeEl ? d3.select(nodeEl) : d3.select(this);
+        nodeSel.attr('transform', `translate(${d.fx}, ${d.fy})`);
       }
 
       linksGroup.selectAll('.root-link-deep-shadow, .root-link-shadow, .root-link, .root-link-edge-shadow, .root-link-texture, .root-link-texture-light, .root-link-center-highlight, .root-link-highlight, .root-link-highlight2, .root-link-specular').attr('d', rootPath);
       if (rootletPath) linksGroup.selectAll('.root-rootlet, .root-rootlet-shadow, .root-rootlet-highlight').attr('d', rootletPath);
-      linksGroup.selectAll('.branch-link-deep-shadow, .branch-link-shadow, .branch-link-base, .branch-link-edge-shadow, .branch-link-texture-dark, .branch-link-texture-light, .branch-link-center-highlight, .branch-link-highlight, .branch-link-highlight2, .branch-link-specular').attr('d', branchPath);
-      if (branchTwigPath) linksGroup.selectAll('.branch-twig, .branch-twig-shadow, .branch-twig-highlight').attr('d', branchTwigPath);
+      linksGroup.selectAll('.branch-link-deep-shadow, .branch-link-shadow, .branch-link-base, .branch-link-edge-shadow, .branch-link-texture-dark, .branch-link-texture-light, .branch-link-center-highlight, .branch-link-highlight, .branch-link-highlight2, .branch-link-specular, .branch-sap-flow').attr('d', branchPath);
+      if (branchTwigPath) linksGroup.selectAll('.branch-twig, .branch-twig-shadow, .branch-twig-highlight, .twig-sap-flow').attr('d', branchTwigPath);
     })
     .on('end', function (_event, d) {
-      d3.select(this).style('cursor', 'grab');
+      const nodeEl = this?.closest?.('.node') || this?.parentNode;
+      const nodeSel = nodeEl ? d3.select(nodeEl) : d3.select(this);
+      nodeSel.style('cursor', 'grab');
       const kind = getSelectionKindForId(d?.data?.id);
       const baseOpacity = kind ? (kind === 'selected' ? 0.95 : kind === 'desc' ? 0.72 : 0.66) : 0;
-      d3.select(this).select('.glow-ring').transition().duration(200).attr('opacity', baseOpacity);
+      nodeSel.select('.glow-ring').transition().duration(200).attr('opacity', baseOpacity);
       d.subtreeDrag = null;
     });
 
+  hitArea.call(dragBehavior);
+
   nodeGroup
-    .call(dragBehavior)
     .on('mouseenter', function (_event, d) {
       const kind = getSelectionKindForId(d?.data?.id);
       const opacity = kind ? (kind === 'selected' ? 1 : 0.9) : 0.55;

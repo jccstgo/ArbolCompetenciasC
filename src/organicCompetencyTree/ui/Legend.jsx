@@ -11,6 +11,7 @@ const legendItems = [
 export default function Legend() {
   return (
     <div
+      className="legend-panel"
       style={{
         position: 'absolute',
         bottom: 14,
@@ -22,6 +23,7 @@ export default function Legend() {
       }}
     >
       <div
+        className="legend-title"
         style={{
           fontSize: '11px',
           fontFamily,
@@ -35,8 +37,9 @@ export default function Legend() {
         Leyenda
       </div>
       {legendItems.map((item) => (
-        <div key={item.type} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+        <div key={item.type} className="legend-item" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
           <div
+            className="legend-icon"
             style={{
               width: 22,
               height: 22,
@@ -52,7 +55,7 @@ export default function Legend() {
           >
             <span style={{ fontSize: '11px', color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.4)' }}>{item.icon}</span>
           </div>
-          <span style={{ fontSize: '13px', fontFamily, fontWeight: 600, color: '#E8E8E8', lineHeight: 1.2 }}>
+          <span className="legend-label" style={{ fontSize: '13px', fontFamily, fontWeight: 600, color: '#E8E8E8', lineHeight: 1.2 }}>
             {item.label}
           </span>
         </div>

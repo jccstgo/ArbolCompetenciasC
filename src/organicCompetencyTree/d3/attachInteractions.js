@@ -36,14 +36,15 @@ export function attachInteractions({
   
   const dragBehavior = d3.drag()
     .on('start', function (event, d) {
-      event.sourceEvent.stopPropagation();
+      event.sourceEvent?.stopPropagation?.();
+      event.sourceEvent?.preventDefault?.();
       d3.select(this).raise().style('cursor', 'grabbing');
       d3.select(this).select('.glow-ring').transition().duration(150).attr('opacity', 0.6);
       const transform = zoomRef.current || d3.zoomIdentity;
       d.dragStartX = d.fx; d.dragStartY = d.fy;
-      const rect = svgRef.current.getBoundingClientRect();
-      d.mouseStartX = (event.sourceEvent.clientX - rect.left - transform.x) / transform.k;
-      d.mouseStartY = (event.sourceEvent.clientY - rect.top - transform.y) / transform.k;
+      const [px, py] = d3.pointer(event.sourceEvent, svgRef.current);
+      d.mouseStartX = (px - transform.x) / transform.k;
+      d.mouseStartY = (py - transform.y) / transform.k;
   
       // When dragging a parent (e.g. branch/root), move its subtree with it.
       const subtreeIds = collectSubtreeIdsFromModel(d.data.id);
@@ -56,9 +57,9 @@ export function attachInteractions({
     })
     .on('drag', function (event, d) {
       const transform = zoomRef.current || d3.zoomIdentity;
-      const rect = svgRef.current.getBoundingClientRect();
-      const mx = (event.sourceEvent.clientX - rect.left - transform.x) / transform.k;
-      const my = (event.sourceEvent.clientY - rect.top - transform.y) / transform.k;
+      const [px, py] = d3.pointer(event.sourceEvent, svgRef.current);
+      const mx = (px - transform.x) / transform.k;
+      const my = (py - transform.y) / transform.k;
       d.fx = d.dragStartX + (mx - d.mouseStartX);
       d.fy = d.dragStartY + (my - d.mouseStartY);
   

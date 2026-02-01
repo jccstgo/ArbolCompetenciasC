@@ -15,6 +15,7 @@ export default function BottomActionBar({ selectedNode, options, onAction, sapFl
 
   return (
     <div
+      className="bottom-action-bar"
       style={{
         position: 'absolute',
         left: '50%',
@@ -175,6 +176,7 @@ export default function BottomActionBar({ selectedNode, options, onAction, sapFl
           return (
             <button
               key={opt.action}
+              className="action-btn"
               onClick={() => selectedNode && onAction(opt.action, selectedNode.id)}
               disabled={!selectedNode}
               style={{
@@ -222,6 +224,7 @@ export default function BottomActionBar({ selectedNode, options, onAction, sapFl
               }}
             >
               <span
+                className="action-icon"
                 style={{
                   width: 24,
                   height: 24,

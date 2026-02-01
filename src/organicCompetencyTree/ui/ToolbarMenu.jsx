@@ -207,6 +207,7 @@ export default function ToolbarMenu({
       <div ref={menuRef} style={{ position: 'absolute', top: 14, left: 14, zIndex: 12 }}>
         {/* Menu Button */}
         <button
+          className="toolbar-menu-btn"
           onClick={() => setIsOpen(!isOpen)}
           style={{
             display: 'flex',
@@ -238,6 +239,7 @@ export default function ToolbarMenu({
         {/* Dropdown Menu */}
         {isOpen && (
           <div
+            className="toolbar-dropdown"
             style={{
               position: 'absolute',
               top: 'calc(100% + 8px)',

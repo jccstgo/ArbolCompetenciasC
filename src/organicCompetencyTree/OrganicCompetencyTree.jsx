@@ -410,7 +410,12 @@ export default function OrganicCompetencyTree() {
       <Legend />
       <Stats treeData={treeData} countNodes={countNodes} />
 
-      <svg ref={svgRef} width={dimensions.width} height={dimensions.height} style={{ display: 'block' }} />
+      <svg
+        ref={svgRef}
+        width={dimensions.width}
+        height={dimensions.height}
+        style={{ display: 'block', touchAction: 'none', WebkitUserSelect: 'none', userSelect: 'none' }}
+      />
 
       <ContextMenu contextMenu={contextMenu} options={contextMenuOptions} onAction={handleMenuAction} containerRef={containerRef} />
 

@@ -99,6 +99,7 @@ export default function SearchBar({ treeData, onSelectNode }) {
   if (!isOpen) {
     return (
       <button
+        className="search-btn"
         onClick={() => setIsOpen(true)}
         style={{
           position: 'absolute',
@@ -130,6 +131,7 @@ export default function SearchBar({ treeData, onSelectNode }) {
         <span style={{ fontSize: 16 }}>🔍</span>
         <span>Buscar</span>
         <span
+          className="search-shortcut"
           style={{
             padding: '2px 8px',
             borderRadius: 6,

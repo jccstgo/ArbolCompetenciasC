@@ -9,6 +9,7 @@ const statItems = [
 export default function Stats({ treeData, countNodes }) {
   return (
     <div
+      className="stats-panel"
       style={{
         position: 'absolute',
         bottom: 14,
@@ -20,6 +21,7 @@ export default function Stats({ treeData, countNodes }) {
       }}
     >
       <div
+        className="stats-title"
         style={{
           fontSize: '11px',
           fontFamily,
@@ -36,6 +38,7 @@ export default function Stats({ treeData, countNodes }) {
         {statItems.map((item) => (
           <div key={item.type} style={{ textAlign: 'center' }}>
             <div
+              className="stats-number"
               style={{
                 fontSize: '24px',
                 fontFamily,
@@ -48,6 +51,7 @@ export default function Stats({ treeData, countNodes }) {
               {countNodes(treeData, item.type)}
             </div>
             <div
+              className="stats-label"
               style={{
                 fontSize: '11px',
                 fontFamily,

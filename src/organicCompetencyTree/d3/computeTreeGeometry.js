@@ -5,6 +5,12 @@ import { generateLeafPositions } from '../generateLeafPositions.js';
 export function computeTreeGeometry({ treeData, width, height, centerX, groundY }) {
   const hasPos = (p) => p && Number.isFinite(p.x) && Number.isFinite(p.y);
   const getPos = (data) => (hasPos(data?.pos) ? data.pos : null);
+  const setPos = (data, x, y) => {
+    if (!data) return;
+    if (Number.isFinite(x) && Number.isFinite(y)) {
+      data.pos = { x, y };
+    }
+  };
 
   // Process tree data
   const rootsData = { ...treeData, children: treeData.children?.filter(c => c.type === 'root') || [] };
@@ -30,6 +36,7 @@ export function computeTreeGeometry({ treeData, width, height, centerX, groundY 
       d.fy = groundY + 50 + d.depth * 65 + Math.cos(d.data.id * 0.9) * 12;
     }
     d.leaves = [];
+    setPos(d.data, d.fx, d.fy);
   });
   
   const trunkPos = getPos(treeData);
@@ -40,6 +47,7 @@ export function computeTreeGeometry({ treeData, width, height, centerX, groundY 
     depth: 0,
     leaves: generateLeafPositions('trunk', treeData.id)
   };
+  setPos(treeData, trunkNode.fx, trunkNode.fy);
   
   const effectiveRadius = (t) => {
     if (t === 'trunk') return 85; // Larger radius for bigger canopy
@@ -104,6 +112,7 @@ export function computeTreeGeometry({ treeData, width, height, centerX, groundY 
       d.fy = trunkNode.fy - d.y;
     }
     d.leaves = generateLeafPositions('branch', d.data.id);
+    setPos(d.data, d.fx, d.fy);
     placed.push({ fx: d.fx, fy: d.fy, data: d.data });
   });
   
@@ -138,6 +147,7 @@ export function computeTreeGeometry({ treeData, width, height, centerX, groundY 
         parent: b,
         leaves: generateLeafPositions('fruit', fruit.id),
       };
+      setPos(fruit, fn.fx, fn.fy);
       fruitNodes.push(fn);
       placed.push({ fx: fn.fx, fy: fn.fy, data: fn.data });
     });

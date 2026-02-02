@@ -116,6 +116,7 @@ export function reorganizeBranchesAndFruitsAction({
     nd.fx = pos.x;
     nd.fy = pos.y;
     nodesGroup.select(`.node-${id}`).attr('transform', `translate(${nd.fx}, ${nd.fy})`);
+    if (nd?.data) nd.data.pos = { x: nd.fx, y: nd.fy };
     placedRoots.push(nd);
   }
 
@@ -136,6 +137,7 @@ export function reorganizeBranchesAndFruitsAction({
     nd.fx = trunkDatum.fx + h.x;
     nd.fy = trunkDatum.fy - h.y;
     nodesGroup.select(`.node-${id}`).attr('transform', `translate(${nd.fx}, ${nd.fy})`);
+    if (nd?.data) nd.data.pos = { x: nd.fx, y: nd.fy };
   }
 
   const placed = visibleNodeDatums.filter((nd) => nd?.data?.type !== 'fruit'); // fruits will be repositioned
@@ -175,6 +177,7 @@ export function reorganizeBranchesAndFruitsAction({
       nd.fx = pos.x;
       nd.fy = pos.y;
       nodesGroup.select(`.node-${fid}`).attr('transform', `translate(${nd.fx}, ${nd.fy})`);
+      if (nd?.data) nd.data.pos = { x: nd.fx, y: nd.fy };
       placed.push(nd);
     });
   }

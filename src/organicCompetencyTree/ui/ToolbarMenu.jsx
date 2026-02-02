@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import * as d3 from 'd3';
 import { glassPanel, fontFamily } from './glassStyles.js';
 
 const STORAGE_KEY = 'arbol-competencias-data';
@@ -18,34 +17,6 @@ export default function ToolbarMenu({
   const fileInputRef = useRef(null);
   const menuRef = useRef(null);
 
-  const buildTreeSnapshot = () => {
-    const snapshot = JSON.parse(JSON.stringify(treeData));
-
-    if (!svgRef?.current) return snapshot;
-
-    const posById = new Map();
-    d3.select(svgRef.current)
-      .selectAll('.nodes .node')
-      .each(function (d) {
-        const id = d?.data?.id;
-        if (id == null) return;
-        if (Number.isFinite(d.fx) && Number.isFinite(d.fy)) {
-          posById.set(id, { x: d.fx, y: d.fy });
-        }
-      });
-
-    const applyPos = (node) => {
-      if (!node) return;
-      const pos = posById.get(node.id);
-      if (pos) node.pos = pos;
-      if (Array.isArray(node.children)) node.children.forEach(applyPos);
-      if (Array.isArray(node._children)) node._children.forEach(applyPos);
-    };
-
-    applyPos(snapshot);
-    return snapshot;
-  };
-
   // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -59,7 +30,7 @@ export default function ToolbarMenu({
 
   // Export tree data as JSON file
   const handleExportJSON = () => {
-    const dataStr = JSON.stringify(buildTreeSnapshot(), null, 2);
+    const dataStr = JSON.stringify(treeData, null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -146,7 +117,7 @@ export default function ToolbarMenu({
   // Save to localStorage
   const handleSaveLocal = () => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(buildTreeSnapshot()));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(treeData));
       setIsOpen(false);
       // Show brief success feedback
       const btn = document.querySelector('.save-local-btn');
@@ -164,7 +135,7 @@ export default function ToolbarMenu({
   // Generate shareable URL
   const handleShare = () => {
     try {
-      const compressedData = btoa(encodeURIComponent(JSON.stringify(buildTreeSnapshot())));
+      const compressedData = btoa(encodeURIComponent(JSON.stringify(treeData)));
       const url = `${window.location.origin}${window.location.pathname}?tree=${compressedData}`;
       setShareUrl(url);
       setShowShareModal(true);

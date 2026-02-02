@@ -134,6 +134,17 @@ export function attachInteractions({
       const kind = getSelectionKindForId(d?.data?.id);
       const baseOpacity = kind ? (kind === 'selected' ? 0.95 : kind === 'desc' ? 0.72 : 0.66) : 0;
       nodeSel.select('.glow-ring').transition().duration(200).attr('opacity', baseOpacity);
+      if (d.subtreeDrag?.subtree?.length) {
+        for (const item of d.subtreeDrag.subtree) {
+          const dataNode = item?.d?.data;
+          if (!dataNode) continue;
+          if (Number.isFinite(item.d.fx) && Number.isFinite(item.d.fy)) {
+            dataNode.pos = { x: item.d.fx, y: item.d.fy };
+          }
+        }
+      } else if (d?.data && Number.isFinite(d.fx) && Number.isFinite(d.fy)) {
+        d.data.pos = { x: d.fx, y: d.fy };
+      }
       d.subtreeDrag = null;
       d.dragReady = null;
     });

@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { glassPanel, fontFamily } from './glassStyles.js';
 
 const statItems = [
@@ -6,7 +7,24 @@ const statItems = [
   { label: 'Frutos', type: 'fruit', color: '#EF5350' },
 ];
 
-export default function Stats({ treeData, countNodes }) {
+export default function Stats({ treeData }) {
+  const counts = useMemo(() => {
+    const totals = { root: 0, branch: 0, fruit: 0 };
+    const stack = [treeData];
+    while (stack.length) {
+      const node = stack.pop();
+      if (!node) continue;
+      if (node.type && Object.prototype.hasOwnProperty.call(totals, node.type)) {
+        totals[node.type] += 1;
+      }
+      const children = Array.isArray(node.children) ? node.children : [];
+      const hidden = Array.isArray(node._children) ? node._children : [];
+      for (const child of children) stack.push(child);
+      for (const child of hidden) stack.push(child);
+    }
+    return totals;
+  }, [treeData]);
+
   return (
     <div
       className="stats-panel"
@@ -49,7 +67,7 @@ export default function Stats({ treeData, countNodes }) {
                 textShadow: `0 2px 8px ${item.color}40`,
               }}
             >
-              {countNodes(treeData, item.type)}
+              {counts[item.type] ?? 0}
             </div>
             <div
               className="stats-label"

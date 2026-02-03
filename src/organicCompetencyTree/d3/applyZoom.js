@@ -5,6 +5,7 @@ export function applyInitialOrSavedZoom({
   zoomBehavior,
   zoomRef,
   isFirstRender,
+  initialZoomTimeoutRef,
   savedTransform,
   width,
   height,
@@ -16,7 +17,10 @@ export function applyInitialOrSavedZoom({
   // Apply zoom: either restore saved transform or calculate initial
   if (isFirstRender.current) {
     // First render: calculate optimal zoom
-    setTimeout(() => {
+    if (initialZoomTimeoutRef?.current) {
+      clearTimeout(initialZoomTimeoutRef.current);
+    }
+    initialZoomTimeoutRef.current = setTimeout(() => {
       const safeBBox = (node) => {
         if (!node) return null;
         try {
@@ -51,8 +55,10 @@ export function applyInitialOrSavedZoom({
       const ty = (height - bounds.height * scale) / 2 - bounds.y * scale;
       const initialTransform = d3.zoomIdentity.translate(tx, ty).scale(scale);
       zoomRef.current = initialTransform;
-      svg.transition().duration(1000).call(zoomBehavior.transform, initialTransform);
+      svg.interrupt('initial-zoom');
+      svg.transition('initial-zoom').duration(900).call(zoomBehavior.transform, initialTransform);
       isFirstRender.current = false;
+      if (initialZoomTimeoutRef) initialZoomTimeoutRef.current = null;
     }, 100);
   } else if (savedTransform) {
     // Subsequent renders: restore saved transform immediately

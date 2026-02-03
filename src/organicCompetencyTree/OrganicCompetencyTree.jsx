@@ -10,7 +10,6 @@ import { addChildIncremental } from './actions/addChild.js';
 import { toggleChildrenCollapsedAction } from './actions/toggleChildrenCollapsed.js';
 import { confirmDeleteAction } from './actions/confirmDelete.js';
 import {
-  countNodes,
   deepClone,
   findNode,
   getAllChildren,
@@ -52,14 +51,32 @@ function getInitialTreeData() {
   return initialData;
 }
 
+const buildParentById = (root) => {
+  const map = new Map();
+  if (!root) return map;
+  const stack = [{ node: root, parentId: null }];
+  while (stack.length) {
+    const { node, parentId } = stack.pop();
+    if (!node) continue;
+    if (node.id != null) map.set(node.id, parentId);
+    const kids = getAllChildren(node);
+    for (const child of kids) {
+      stack.push({ node: child, parentId: node.id });
+    }
+  }
+  return map;
+};
+
 export default function OrganicCompetencyTree() {
   const svgRef = useRef(null);
   const containerRef = useRef(null);
   const zoomRef = useRef(null);
   const zoomBehaviorRef = useRef(null);
   const isFirstRender = useRef(true);
+  const initialZoomTimeoutRef = useRef(null);
   const linkFnsRef = useRef({ rootPath: null, branchPath: null, rootWidth: null, branchWidth: null });
   const treeDataRef = useRef(null);
+  const parentByIdRef = useRef(new Map());
   const selectionRef = useRef(createEmptySelection());
   const ambientTimerRef = useRef(null);
   const sapFlowEnabledRef = useRef(true);
@@ -81,6 +98,7 @@ export default function OrganicCompetencyTree() {
   const [masteryValue, setMasteryValue] = useState(50);
 
   useEffect(() => { treeDataRef.current = treeData; }, [treeData]);
+  useEffect(() => { parentByIdRef.current = buildParentById(treeData); }, [treeData]);
   useEffect(() => { sapFlowEnabledRef.current = sapFlowEnabled; }, [sapFlowEnabled]);
 
   // Auto-save to localStorage when treeData changes
@@ -130,7 +148,7 @@ export default function OrganicCompetencyTree() {
       return;
     }
 
-    const selection = computeSelection({ model, selectedId, findNode, getAllChildren });
+    const selection = computeSelection({ model, selectedId, findNode, getAllChildren, parentById: parentByIdRef.current });
     selectionRef.current = selection;
     applySelectionStyles({ svgEl, selection, nodeConfig, sapFlowEnabled: sapFlowEnabledRef.current });
     setSelectedNodeId(selectedId);
@@ -176,7 +194,10 @@ export default function OrganicCompetencyTree() {
   }, [dimensions.width, dimensions.height]);
 
   useEffect(() => {
-    const handleClick = (e) => { if (!e.target.closest('.context-menu')) setContextMenu(null); };
+    const handleClick = (e) => {
+      const target = e?.target;
+      if (!target?.closest || !target.closest('.context-menu')) setContextMenu(null);
+    };
     const handleEscape = (e) => {
       if (e.key === 'Escape') {
         setContextMenu(null);
@@ -248,18 +269,15 @@ export default function OrganicCompetencyTree() {
     const target = findNode(model, nodeId);
     if (!target) return;
 
-    const subtreeIds = [];
+    const getVisibleChildren = (node) => (Array.isArray(node?.children) ? node.children : []);
+    const subtreeNodes = [];
     const stack = [target];
     while (stack.length) {
       const next = stack.pop();
       if (!next) continue;
-      subtreeIds.push(next.id);
-      stack.push(...getAllChildren(next));
+      subtreeNodes.push(next);
+      stack.push(...getVisibleChildren(next));
     }
-
-    const svg = d3.select(svgEl);
-    const nodesGroup = svg.select('.nodes');
-    if (nodesGroup.empty()) return;
 
     const effectiveRadius = (t) => {
       if (t === 'trunk') return 140;
@@ -274,21 +292,42 @@ export default function OrganicCompetencyTree() {
     let maxX = -Infinity;
     let maxY = -Infinity;
 
-    for (const id of subtreeIds) {
-      const el = nodesGroup.select(`.node-${id}`).node();
-      if (!el) continue;
-      const d = d3.select(el).datum();
-      const x = d?.fx;
-      const y = d?.fy;
+    let hasBounds = false;
+    for (const node of subtreeNodes) {
+      const pos = node?.pos;
+      const x = pos?.x;
+      const y = pos?.y;
       if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
-      const r = effectiveRadius(d?.data?.type);
+      const r = effectiveRadius(node?.type);
       minX = Math.min(minX, x - r);
       minY = Math.min(minY, y - r);
       maxX = Math.max(maxX, x + r);
       maxY = Math.max(maxY, y + r);
+      hasBounds = true;
     }
 
-    if (!isFinite(minX) || !isFinite(minY) || !isFinite(maxX) || !isFinite(maxY)) return;
+    if (!hasBounds) {
+      const svg = d3.select(svgEl);
+      const nodesGroup = svg.select('.nodes');
+      if (nodesGroup.empty()) return;
+
+      for (const node of subtreeNodes) {
+        const el = nodesGroup.select(`.node-${node.id}`).node();
+        if (!el) continue;
+        const d = d3.select(el).datum();
+        const x = d?.fx;
+        const y = d?.fy;
+        if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
+        const r = effectiveRadius(d?.data?.type);
+        minX = Math.min(minX, x - r);
+        minY = Math.min(minY, y - r);
+        maxX = Math.max(maxX, x + r);
+        maxY = Math.max(maxY, y + r);
+        hasBounds = true;
+      }
+    }
+
+    if (!hasBounds || !isFinite(minX) || !isFinite(minY) || !isFinite(maxX) || !isFinite(maxY)) return;
 
     const boundsW = Math.max(1, maxX - minX);
     const boundsH = Math.max(1, maxY - minY);
@@ -308,8 +347,10 @@ export default function OrganicCompetencyTree() {
     const ty = insetTop + (availH - boundsH * scale) / 2 - minY * scale;
     const t = d3.zoomIdentity.translate(tx, ty).scale(scale);
 
+    const svg = d3.select(svgEl);
+    svg.interrupt();
     zoomRef.current = t;
-    svg.transition().duration(650).call(zoomBehavior.transform, t);
+    svg.transition('center-on-node').duration(550).ease(d3.easeCubicOut).call(zoomBehavior.transform, t);
   }, [dimensions.height, dimensions.width]);
 
 
@@ -382,6 +423,7 @@ export default function OrganicCompetencyTree() {
       linkFnsRef,
       ambientTimerRef,
       isFirstRender,
+      initialZoomTimeoutRef,
       selectionRef,
       setContextMenu,
       applySelectionHighlight,
@@ -438,7 +480,7 @@ export default function OrganicCompetencyTree() {
       <ToolbarMenu treeData={treeData} onImport={handleImport} svgRef={svgRef} />
       <SearchBar treeData={treeData} onSelectNode={handleSearchSelect} />
       <Legend />
-      <Stats treeData={treeData} countNodes={countNodes} />
+      <Stats treeData={treeData} />
 
       <svg
         ref={svgRef}

@@ -28,14 +28,17 @@ export const isNodeVisible = (svgEl, nodeId) => {
   return sel.node()?.style?.display !== 'none';
 };
 
-export const computeSelection = ({ model, selectedId, findNode, getAllChildren }) => {
-  const parentById = new Map();
-  const walkParents = (node, parentId) => {
-    if (!node) return;
-    parentById.set(node.id, parentId);
-    getAllChildren(node).forEach((k) => walkParents(k, node.id));
-  };
-  walkParents(model, null);
+export const computeSelection = ({ model, selectedId, findNode, getAllChildren, parentById }) => {
+  let parentMap = parentById instanceof Map && parentById.size ? parentById : null;
+  if (!parentMap) {
+    parentMap = new Map();
+    const walkParents = (node, parentId) => {
+      if (!node) return;
+      parentMap.set(node.id, parentId);
+      getAllChildren(node).forEach((k) => walkParents(k, node.id));
+    };
+    walkParents(model, null);
+  }
 
   const selectedModel = findNode(model, selectedId);
   if (!selectedModel) return createEmptySelection();
@@ -52,7 +55,7 @@ export const computeSelection = ({ model, selectedId, findNode, getAllChildren }
   const ancestors = new Set();
   let cur = selectedId;
   while (true) {
-    const pid = parentById.get(cur);
+    const pid = parentMap.get(cur);
     if (!pid) break;
     ancestors.add(pid);
     cur = pid;

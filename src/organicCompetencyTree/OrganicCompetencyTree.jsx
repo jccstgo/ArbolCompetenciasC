@@ -25,7 +25,7 @@ import Stats from './ui/Stats.jsx';
 import TreeHeader from './ui/TreeHeader.jsx';
 import BottomActionBar from './ui/BottomActionBar.jsx';
 import SearchBar from './ui/SearchBar.jsx';
-import ToolbarMenu, { loadFromLocalStorage, loadFromUrl, STORAGE_KEY } from './ui/ToolbarMenu.jsx';
+import ToolbarMenu, { loadFromUrl } from './ui/ToolbarMenu.jsx';
 import { fontFamily } from './ui/glassStyles.js';
 
 // ============================================
@@ -35,7 +35,7 @@ import { fontFamily } from './ui/glassStyles.js';
 
 // NOTE: Configuration/data/utilities live in `src/organicCompetencyTree/*`.
 
-// Helper to get initial data from URL, localStorage, or default
+// Helper to get initial data from URL or default
 function getInitialTreeData() {
   // Priority 1: URL parameter (shared link)
   const urlData = loadFromUrl();
@@ -44,10 +44,7 @@ function getInitialTreeData() {
     window.history.replaceState({}, '', window.location.pathname);
     return urlData;
   }
-  // Priority 2: localStorage
-  const localData = loadFromLocalStorage();
-  if (localData) return localData;
-  // Priority 3: Default data
+  // Priority 2: Default data
   return initialData;
 }
 
@@ -77,6 +74,7 @@ export default function OrganicCompetencyTree() {
   const linkFnsRef = useRef({ rootPath: null, branchPath: null, rootWidth: null, branchWidth: null });
   const treeDataRef = useRef(null);
   const parentByIdRef = useRef(new Map());
+  const layoutSizeRef = useRef({ width: null, height: null });
   const selectionRef = useRef(createEmptySelection());
   const ambientTimerRef = useRef(null);
   const sapFlowEnabledRef = useRef(true);
@@ -100,18 +98,6 @@ export default function OrganicCompetencyTree() {
   useEffect(() => { treeDataRef.current = treeData; }, [treeData]);
   useEffect(() => { parentByIdRef.current = buildParentById(treeData); }, [treeData]);
   useEffect(() => { sapFlowEnabledRef.current = sapFlowEnabled; }, [sapFlowEnabled]);
-
-  // Auto-save to localStorage when treeData changes
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(treeData));
-      } catch (e) {
-        console.warn('Error auto-saving to localStorage:', e);
-      }
-    }, 1000); // Debounce 1 second
-    return () => clearTimeout(timeoutId);
-  }, [treeData]);
 
   useEffect(() => {
     const svgEl = svgRef.current;
@@ -424,6 +410,7 @@ export default function OrganicCompetencyTree() {
       ambientTimerRef,
       isFirstRender,
       initialZoomTimeoutRef,
+      layoutSizeRef,
       selectionRef,
       setContextMenu,
       applySelectionHighlight,

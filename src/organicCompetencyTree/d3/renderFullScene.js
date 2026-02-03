@@ -21,6 +21,7 @@ export function renderFullScene({
   ambientTimerRef,
   isFirstRender,
   initialZoomTimeoutRef,
+  layoutSizeRef,
   selectionRef,
   setContextMenu,
   applySelectionHighlight,
@@ -111,13 +112,23 @@ export function renderFullScene({
     drawFloatingParticles({ svg, container: mainGroup, width, height, groundY });
   }
 
+  const prevLayout = layoutSizeRef?.current;
+  const layoutChanged = !prevLayout || prevLayout.width !== width || prevLayout.height !== height;
+
   const { allNodes, allLinks } = computeTreeGeometry({
     treeData,
     width,
     height,
     centerX,
     groundY,
+    useSavedPositions: !layoutChanged,
   });
+  if (layoutSizeRef?.current) {
+    layoutSizeRef.current.width = width;
+    layoutSizeRef.current.height = height;
+  } else if (layoutSizeRef) {
+    layoutSizeRef.current = { width, height };
+  }
 
   drawTrunkAndDecor({ mainGroup, centerX, groundY });
 

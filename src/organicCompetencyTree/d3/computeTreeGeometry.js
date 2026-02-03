@@ -2,9 +2,9 @@ import * as d3 from 'd3';
 import { nodeConfig } from '../constants.js';
 import { generateLeafPositions } from '../generateLeafPositions.js';
 
-export function computeTreeGeometry({ treeData, width, height, centerX, groundY }) {
+export function computeTreeGeometry({ treeData, width, height, centerX, groundY, useSavedPositions = true }) {
   const hasPos = (p) => p && Number.isFinite(p.x) && Number.isFinite(p.y);
-  const getPos = (data) => (hasPos(data?.pos) ? data.pos : null);
+  const getPos = (data) => (useSavedPositions && hasPos(data?.pos) ? data.pos : null);
   const setPos = (data, x, y) => {
     if (!data) return;
     if (Number.isFinite(x) && Number.isFinite(y)) {

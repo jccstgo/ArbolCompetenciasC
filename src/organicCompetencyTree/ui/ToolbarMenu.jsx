@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { glassPanel, fontFamily } from './glassStyles.js';
 
-const STORAGE_KEY = 'arbol-competencias-data';
-
 export default function ToolbarMenu({
   treeData,
   onImport,
@@ -112,24 +110,6 @@ export default function ToolbarMenu({
         alert('Error al exportar la imagen.');
       }
     }, 100);
-  };
-
-  // Save to localStorage
-  const handleSaveLocal = () => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(treeData));
-      setIsOpen(false);
-      // Show brief success feedback
-      const btn = document.querySelector('.save-local-btn');
-      if (btn) {
-        btn.textContent = 'Guardado!';
-        setTimeout(() => {
-          btn.textContent = 'Guardar Local';
-        }, 1500);
-      }
-    } catch {
-      alert('Error al guardar en el almacenamiento local.');
-    }
   };
 
   // Generate shareable URL
@@ -252,26 +232,13 @@ export default function ToolbarMenu({
             }}
           >
             <button
-              onClick={handleSaveLocal}
-              className="save-local-btn"
-              style={menuButtonStyle}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,193,7,0.15)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-            >
-              <span style={{ fontSize: 16, width: 24 }}>💾</span>
-              Guardar Local
-            </button>
-
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 8px' }} />
-
-            <button
               onClick={handleExportJSON}
               style={menuButtonStyle}
               onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,193,7,0.15)')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
             >
               <span style={{ fontSize: 16, width: 24 }}>📄</span>
-              Exportar JSON
+              Guardar Archivo
             </button>
 
             <button
@@ -463,19 +430,6 @@ export default function ToolbarMenu({
   );
 }
 
-// Helper function to load data from localStorage
-export function loadFromLocalStorage() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      return JSON.parse(saved);
-    }
-  } catch {
-    console.error('Error loading from localStorage');
-  }
-  return null;
-}
-
 // Helper function to load data from URL
 export function loadFromUrl() {
   try {
@@ -490,6 +444,3 @@ export function loadFromUrl() {
   }
   return null;
 }
-
-// Storage key export for external use
-export { STORAGE_KEY };

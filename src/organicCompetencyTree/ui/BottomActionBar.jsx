@@ -36,19 +36,21 @@ export default function BottomActionBar({ selectedNode, options, onAction, sapFl
         onClick={() => setCollapsed((v) => !v)}
         style={{
           pointerEvents: 'auto',
-          width: 36,
-          height: 36,
-          borderRadius: 10,
-          border: '1px solid rgba(255,255,255,0.15)',
-          background: 'linear-gradient(180deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04))',
-          color: 'rgba(255,255,255,0.9)',
-          fontSize: 16,
-          fontWeight: 800,
+          width: 40,
+          height: 40,
+          borderRadius: 12,
+          border: '1px solid rgba(255,193,7,0.75)',
+          background: collapsed
+            ? 'linear-gradient(180deg, rgba(255,193,7,0.95), rgba(255,193,7,0.6))'
+            : 'linear-gradient(180deg, rgba(255,193,7,0.85), rgba(255,193,7,0.5))',
+          color: '#0d1b2a',
+          fontSize: 18,
+          fontWeight: 900,
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
           cursor: 'pointer',
-          boxShadow: '0 6px 16px rgba(0,0,0,0.25)',
+          boxShadow: '0 8px 18px rgba(0,0,0,0.35), 0 0 0 2px rgba(255,193,7,0.18)',
           touchAction: 'manipulation',
           WebkitTapHighlightColor: 'transparent',
         }}
@@ -139,67 +141,68 @@ export default function BottomActionBar({ selectedNode, options, onAction, sapFl
             )}
           </div>
 
-          {/* Controles globales */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 8, width: '100%' }}>
-            <button
-              type="button"
-              onClick={() => onToggleSapFlow?.()}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '8px 10px',
-                borderRadius: 999,
-                border: '1px solid rgba(255,255,255,0.12)',
-                background: sapFlowEnabled
-                  ? 'linear-gradient(180deg, rgba(255,193,7,0.22), rgba(255,193,7,0.06))'
-                  : 'linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03))',
-                color: 'rgba(255,255,255,0.92)',
-                fontFamily,
-                fontWeight: 600,
-                fontSize: 12,
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-                touchAction: 'manipulation',
-                WebkitTapHighlightColor: 'transparent',
-                width: '100%',
-                justifyContent: 'space-between',
-              }}
-              title="Activa/desactiva el flujo de savia en las dependencias seleccionadas"
-            >
-              <span
+          {selectedNode && (
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 8, width: '100%' }}>
+              <button
+                type="button"
+                onClick={() => onToggleSapFlow?.()}
                 style={{
-                  width: 22,
-                  height: 22,
                   display: 'inline-flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  borderRadius: 7,
-                  background: sapFlowEnabled ? 'rgba(255,193,7,0.18)' : 'rgba(255,255,255,0.08)',
-                  color: sapFlowEnabled ? '#FFD54F' : 'rgba(255,255,255,0.55)',
-                  fontSize: 14,
-                  lineHeight: 1,
-                }}
-              >
-                💧
-              </span>
-              <span style={{ flex: 1, textAlign: 'left' }}>Flujo de savia</span>
-              <span
-                style={{
-                  padding: '3px 8px',
+                  gap: 8,
+                  padding: '8px 10px',
                   borderRadius: 999,
-                  background: sapFlowEnabled ? 'rgba(76,175,80,0.18)' : 'rgba(176,190,197,0.14)',
-                  border: sapFlowEnabled ? '1px solid rgba(76,175,80,0.25)' : '1px solid rgba(176,190,197,0.18)',
-                  color: sapFlowEnabled ? '#A5D6A7' : 'rgba(255,255,255,0.6)',
-                  fontWeight: 900,
-                  fontSize: 11,
-                  letterSpacing: '0.4px',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  background: sapFlowEnabled
+                    ? 'linear-gradient(180deg, rgba(255,193,7,0.22), rgba(255,193,7,0.06))'
+                    : 'linear-gradient(180deg, rgba(255,255,255,0.10), rgba(255,255,255,0.03))',
+                  color: 'rgba(255,255,255,0.92)',
+                  fontFamily,
+                  fontWeight: 600,
+                  fontSize: 12,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                  touchAction: 'manipulation',
+                  WebkitTapHighlightColor: 'transparent',
+                  width: '100%',
+                  justifyContent: 'space-between',
                 }}
+                title="Activa/desactiva el flujo de savia en las dependencias seleccionadas"
               >
-                {sapFlowEnabled ? 'ON' : 'OFF'}
-              </span>
-            </button>
-          </div>
+                <span
+                  style={{
+                    width: 22,
+                    height: 22,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: 7,
+                    background: sapFlowEnabled ? 'rgba(255,193,7,0.18)' : 'rgba(255,255,255,0.08)',
+                    color: sapFlowEnabled ? '#FFD54F' : 'rgba(255,255,255,0.55)',
+                    fontSize: 14,
+                    lineHeight: 1,
+                  }}
+                >
+                  💧
+                </span>
+                <span style={{ flex: 1, textAlign: 'left' }}>Flujo de savia</span>
+                <span
+                  style={{
+                    padding: '3px 8px',
+                    borderRadius: 999,
+                    background: sapFlowEnabled ? 'rgba(76,175,80,0.18)' : 'rgba(176,190,197,0.14)',
+                    border: sapFlowEnabled ? '1px solid rgba(76,175,80,0.25)' : '1px solid rgba(176,190,197,0.18)',
+                    color: sapFlowEnabled ? '#A5D6A7' : 'rgba(255,255,255,0.6)',
+                    fontWeight: 900,
+                    fontSize: 11,
+                    letterSpacing: '0.4px',
+                  }}
+                >
+                  {sapFlowEnabled ? 'ON' : 'OFF'}
+                </span>
+              </button>
+            </div>
+          )}
 
           {/* Acciones */}
           <div

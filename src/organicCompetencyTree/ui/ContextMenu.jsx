@@ -1,19 +1,24 @@
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { typeLabels } from '../constants.js';
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 export default function ContextMenu({ contextMenu, options, onAction, containerRef }) {
-  if (!contextMenu) return null;
-
+  // Hooks DEBEN estar antes de cualquier return condicional
   const menuRef = useRef(null);
-  const [position, setPosition] = useState({ left: contextMenu.x, top: contextMenu.y });
+  const [position, setPosition] = useState({ left: 0, top: 0 });
 
+  // Actualizar posición cuando cambia contextMenu
   useLayoutEffect(() => {
-    setPosition({ left: contextMenu.x, top: contextMenu.y });
-  }, [contextMenu.x, contextMenu.y]);
+    if (contextMenu) {
+      setPosition({ left: contextMenu.x, top: contextMenu.y });
+    }
+  }, [contextMenu?.x, contextMenu?.y]);
 
+  // Ajustar posición para que no se salga del contenedor
   useLayoutEffect(() => {
+    if (!contextMenu) return;
+
     const menuEl = menuRef.current;
     const containerEl = containerRef?.current;
     if (!menuEl || !containerEl) return;
@@ -31,7 +36,10 @@ export default function ContextMenu({ contextMenu, options, onAction, containerR
       left: clamp(pos.left, margin, maxLeft),
       top: clamp(pos.top, margin, maxTop),
     }));
-  }, [contextMenu.x, contextMenu.y, contextMenu.nodeName, contextMenu.nodeType, contextMenu.mastery, options.length, containerRef]);
+  }, [contextMenu, options.length, containerRef]);
+
+  // Return condicional DESPUÉS de todos los hooks
+  if (!contextMenu) return null;
 
   return (
     <div

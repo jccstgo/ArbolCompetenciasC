@@ -9,9 +9,6 @@ export default function ToolbarMenu({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [shareUrl, setShareUrl] = useState('');
-  const [copySuccess, setCopySuccess] = useState(false);
   const fileInputRef = useRef(null);
   const menuRef = useRef(null);
 
@@ -112,37 +109,6 @@ export default function ToolbarMenu({
     }, 100);
   };
 
-  // Generate shareable URL
-  const handleShare = () => {
-    try {
-      const compressedData = btoa(encodeURIComponent(JSON.stringify(treeData)));
-      const url = `${window.location.origin}${window.location.pathname}?tree=${compressedData}`;
-      setShareUrl(url);
-      setShowShareModal(true);
-      setIsOpen(false);
-    } catch {
-      alert('Error al generar el enlace para compartir.');
-    }
-  };
-
-  // Copy share URL to clipboard
-  const handleCopyUrl = async () => {
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 2000);
-    } catch {
-      // Fallback for older browsers
-      const textArea = document.createElement('textarea');
-      textArea.value = shareUrl;
-      document.body.appendChild(textArea);
-      textArea.select();
-      document.execCommand('copy');
-      document.body.removeChild(textArea);
-      setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 2000);
-    }
-  };
 
   const menuButtonStyle = {
     display: 'flex',
@@ -261,17 +227,6 @@ export default function ToolbarMenu({
               Exportar Imagen
             </button>
 
-            <div style={{ height: 1, background: 'rgba(255,255,255,0.1)', margin: '4px 8px' }} />
-
-            <button
-              onClick={handleShare}
-              style={menuButtonStyle}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,193,7,0.15)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-            >
-              <span style={{ fontSize: 16, width: 24 }}>🔗</span>
-              Compartir
-            </button>
           </div>
         )}
       </div>
@@ -340,80 +295,6 @@ export default function ToolbarMenu({
                 }}
               >
                 Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Share Modal */}
-      {showShareModal && (
-        <div style={glassModalStyle} onClick={() => setShowShareModal(false)}>
-          <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
-            <h3 style={{ margin: '0 0 8px', color: '#FFC107', fontSize: 22, fontFamily, fontWeight: 700 }}>
-              Compartir Arbol
-            </h3>
-            <p style={{ margin: '0 0 20px', color: 'rgba(255,255,255,0.6)', fontSize: 14, fontFamily }}>
-              Copia este enlace para compartir tu arbol de competencias.
-            </p>
-
-            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-              <input
-                type="text"
-                value={shareUrl}
-                readOnly
-                style={{
-                  flex: 1,
-                  padding: '12px 14px',
-                  borderRadius: 10,
-                  background: 'rgba(0,0,0,0.3)',
-                  border: '1px solid rgba(255,193,7,0.2)',
-                  color: '#E8E8E8',
-                  fontSize: 13,
-                  fontFamily,
-                  outline: 'none',
-                }}
-              />
-              <button
-                onClick={handleCopyUrl}
-                style={{
-                  padding: '12px 20px',
-                  borderRadius: 10,
-                  background: copySuccess ? '#4CAF50' : '#FFC107',
-                  border: 'none',
-                  color: copySuccess ? '#fff' : '#000',
-                  fontSize: 14,
-                  fontFamily,
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  minWidth: 100,
-                }}
-              >
-                {copySuccess ? 'Copiado!' : 'Copiar'}
-              </button>
-            </div>
-
-            <p style={{ margin: '0 0 20px', color: 'rgba(255,255,255,0.4)', fontSize: 12, fontFamily }}>
-              Nota: El enlace contiene todos los datos del arbol. Para arboles muy grandes, considera exportar como JSON.
-            </p>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => setShowShareModal(false)}
-                style={{
-                  padding: '10px 20px',
-                  borderRadius: 10,
-                  background: 'rgba(255,255,255,0.1)',
-                  border: 'none',
-                  color: 'rgba(255,255,255,0.7)',
-                  fontSize: 14,
-                  fontFamily,
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                Cerrar
               </button>
             </div>
           </div>

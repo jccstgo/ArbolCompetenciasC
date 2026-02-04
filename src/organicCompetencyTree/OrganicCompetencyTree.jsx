@@ -48,6 +48,15 @@ function getInitialTreeData() {
   return initialData;
 }
 
+function createNewTreeData() {
+  return {
+    id: 1,
+    name: 'Nuevo Arbol',
+    type: 'trunk',
+    children: [],
+  };
+}
+
 const buildParentById = (root) => {
   const map = new Map();
   if (!root) return map;
@@ -460,11 +469,23 @@ export default function OrganicCompetencyTree() {
     setNextId(findMaxId(importedData) + 1);
   }, [applySelectionHighlight]);
 
+  const handleNewTree = useCallback(() => {
+    const freshTree = createNewTreeData();
+    setTreeData(freshTree);
+    setStructureVersion((v) => v + 1);
+    setNextId(2);
+    setContextMenu(null);
+    applySelectionHighlight(null);
+    setRenameModal({ isOpen: false, nodeId: null, currentName: '', nodeType: '' });
+    setMasteryModal({ isOpen: false, nodeId: null, currentMastery: 50, nodeName: '' });
+    setDeleteModal({ isOpen: false, nodeId: null, nodeName: '' });
+  }, [applySelectionHighlight]);
+
   return (
     <div ref={containerRef} style={{ width: '100vw', height: '100vh', background: '#0d1b2a', position: 'relative', overflow: 'hidden', fontFamily }}>
 
       <TreeHeader />
-      <ToolbarMenu treeData={treeData} onImport={handleImport} svgRef={svgRef} />
+      <ToolbarMenu treeData={treeData} onImport={handleImport} onNewTree={handleNewTree} svgRef={svgRef} />
       <SearchBar treeData={treeData} onSelectNode={handleSearchSelect} />
       <Legend />
       <Stats treeData={treeData} />

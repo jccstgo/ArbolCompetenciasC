@@ -4,6 +4,7 @@ import { glassPanel, fontFamily } from './glassStyles.js';
 export default function ToolbarMenu({
   treeData,
   onImport,
+  onNewTree,
   onExportImage,
   svgRef,
 }) {
@@ -35,6 +36,11 @@ export default function ToolbarMenu({
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    setIsOpen(false);
+  };
+
+  const handleNewTree = () => {
+    if (onNewTree) onNewTree();
     setIsOpen(false);
   };
 
@@ -198,13 +204,23 @@ export default function ToolbarMenu({
             }}
           >
             <button
+              onClick={handleNewTree}
+              style={menuButtonStyle}
+              onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,193,7,0.15)')}
+              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+            >
+              <span style={{ fontSize: 16, width: 24 }}>🆕</span>
+              Nuevo Arbol
+            </button>
+
+            <button
               onClick={handleExportJSON}
               style={menuButtonStyle}
               onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,193,7,0.15)')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
             >
               <span style={{ fontSize: 16, width: 24 }}>📄</span>
-              Guardar Archivo
+              Guardar Arbol
             </button>
 
             <button
@@ -214,7 +230,7 @@ export default function ToolbarMenu({
               onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
             >
               <span style={{ fontSize: 16, width: 24 }}>📂</span>
-              Importar JSON
+              Abrir Archivo
             </button>
 
             <button
@@ -236,7 +252,7 @@ export default function ToolbarMenu({
         <div style={glassModalStyle} onClick={() => setShowImportModal(false)}>
           <div style={modalContentStyle} onClick={(e) => e.stopPropagation()}>
             <h3 style={{ margin: '0 0 8px', color: '#FFC107', fontSize: 22, fontFamily, fontWeight: 700 }}>
-              Importar Arbol
+              Abrir Archivo
             </h3>
             <p style={{ margin: '0 0 20px', color: 'rgba(255,255,255,0.6)', fontSize: 14, fontFamily }}>
               Selecciona un archivo JSON previamente exportado.
